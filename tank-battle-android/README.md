@@ -58,7 +58,27 @@ The whole scene budget hangs off one switch, applied at load — changing it rel
 The compass and the tactical map (which does LOS raycasts for spotting) redraw at 7–12 Hz instead of
 every frame — on a phone that was costing more than the terrain.
 
-## Building
+## Getting it onto a phone
+
+**The easy way — download the ready-made APK.** Every push builds one on CI and publishes it here:
+
+> **https://github.com/anbow1/games/releases/tag/android-latest**
+
+On the phone:
+
+1. Open that link in Chrome and tap `steel-thunder.apk`.
+2. Chrome warns the file may be harmful — this is the standard warning for any APK
+   outside the Play Store. Tap **Download anyway**.
+3. Open the downloaded file (Chrome's download bar, or *Files → Downloads*).
+4. Android asks to allow installing unknown apps from Chrome. Tap **Settings**, turn on
+   *Allow from this source*, then press back and tap **Install**.
+5. Launch **Steel Thunder** from the app drawer. Hold the phone in landscape.
+
+The APK is signed with the standard Android debug key, so it installs alongside — not over —
+anything from the Play Store, and it will not auto-update. To get a newer build, download the
+APK again and install over the top.
+
+## Building it yourself
 
 Requires Android Studio (or a JDK 17+ and the Android SDK with API 35 platform + build tools).
 
