@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OPERATION: CITY STORM — FPS</title>
+<style>
+  :root { --hud: #7fffd4; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #05070a; font-family: "Segoe UI", Roboto, system-ui, sans-serif; color: #eaeef3; }
+  #game { position: fixed; inset: 0; display: block; }
+
+  /* ---------- HUD ---------- */
+  #hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+  .bar-wrap { position: absolute; left: 26px; bottom: 26px; width: 260px; }
+  .bar-label { font-size: 12px; letter-spacing: 2px; opacity: .8; margin-bottom: 4px; text-transform: uppercase; }
+  .bar { height: 16px; background: rgba(0,0,0,.55); border: 1px solid rgba(127,255,212,.35); border-radius: 3px; overflow: hidden; box-shadow: 0 0 12px rgba(0,0,0,.5) inset; }
+  .bar > i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg,#ff3b5c,#ff8a3b); transition: width .18s ease; }
+  #ammo { position: absolute; right: 30px; bottom: 24px; text-align: right; }
+  #ammo .cal { font-size: 13px; letter-spacing: 2px; opacity: .75; }
+  #ammo .num { font-size: 46px; font-weight: 800; line-height: .95; text-shadow: 0 0 14px rgba(127,255,212,.5); }
+  #ammo .num small { font-size: 20px; opacity: .6; font-weight: 500; }
+  #gren { position: absolute; right: 30px; bottom: 92px; text-align: right; font-size: 14px; letter-spacing: 2px; opacity: .9; }
+  #gren b { font-size: 30px; color: var(--hud); }
+  #kill { position: absolute; top: 22px; right: 30px; text-align: right; font-size: 14px; letter-spacing: 2px; opacity: .9; }
+  #kill b { font-size: 30px; color: var(--hud); display: block; }
+  #wave { position: absolute; top: 22px; left: 30px; font-size: 13px; letter-spacing: 3px; opacity: .85; text-transform: uppercase; }
+  #wave b { font-size: 20px; color: var(--hud); }
+
+  /* crosshair */
+  #cross { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 26px; height: 26px; }
+  #cross::before, #cross::after { content:""; position:absolute; background: rgba(127,255,212,.85); box-shadow: 0 0 6px rgba(127,255,212,.8); }
+  #cross::before { left: 12px; top: 0; width: 2px; height: 26px; }
+  #cross::after { top: 12px; left: 0; height: 2px; width: 26px; }
+  #crossdot { position:absolute; left:50%; top:50%; width:4px; height:4px; margin:-2px 0 0 -2px; border-radius:50%; background:#fff; box-shadow:0 0 8px #fff; }
+
+  #msg { position: absolute; top: 34%; left: 50%; transform: translateX(-50%); text-align:center; font-size: 22px; letter-spacing: 3px; text-shadow: 0 2px 12px #000; opacity: 0; transition: opacity .4s; }
+  #prompt { position: absolute; left: 50%; top: 66%; transform: translateX(-50%); background: rgba(0,0,0,.55); border:1px solid rgba(127,255,212,.4); padding: 8px 16px; border-radius: 6px; font-size: 14px; letter-spacing: 1px; opacity: 0; transition: opacity .2s; }
+
+  /* scope overlay */
+  #scope { position: fixed; inset: 0; z-index: 9; pointer-events: none; opacity: 0; transition: opacity .15s; background:
+     radial-gradient(circle at 50% 50%, transparent 32%, rgba(0,0,0,.9) 60%, #000 72%); }
+  #scope.on { opacity: 1; }
+  #scope .lineH, #scope .lineV { position:absolute; background: rgba(0,0,0,.72); }
+  #scope .lineH { left:0; right:0; top:50%; height:1px; transform:translateY(-50%); }
+  #scope .lineV { top:0; bottom:0; left:50%; width:1px; transform:translateX(-50%); }
+  #scope .tick { position:absolute; background: rgba(0,0,0,.72); }
+  #scope .ret { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:2px; height:2px; background:#fff; box-shadow:0 0 6px #000; }
+
+  /* damage + hit feedback */
+  #vignette { position: fixed; inset: 0; z-index: 8; pointer-events: none; box-shadow: inset 0 0 200px 40px rgba(0,0,0,0); transition: box-shadow .25s; }
+  #damage { position: fixed; inset: 0; z-index: 11; pointer-events: none; background: radial-gradient(circle at 50% 50%, transparent 40%, rgba(255,0,30,.55) 100%); opacity: 0; }
+  #hitmarker { position: absolute; left:50%; top:50%; transform: translate(-50%,-50%) rotate(45deg); opacity:0; }
+  #hitmarker i { position:absolute; width:14px; height:2px; background:#fff; box-shadow:0 0 6px #fff; }
+  #hitmarker i:nth-child(1){ left:0;   top:0;  transform: rotate(45deg); }
+  #hitmarker i:nth-child(2){ left:12px;top:0; transform: rotate(-45deg); }
+  #hitmarker i:nth-child(3){ left:0;  bottom:0; transform: rotate(-45deg); }
+  #hitmarker i:nth-child(4){ left:12px;bottom:0; transform: rotate(45deg); }
+
+  /* ---------- menu ---------- */
+  #menu { position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: radial-gradient(circle at 50% 30%, rgba(20,40,55,.55), rgba(3,5,9,.96)); backdrop-filter: blur(2px); text-align:center; }
+  #menu h1 { font-size: 62px; letter-spacing: 6px; font-weight: 800; text-shadow: 0 0 40px rgba(127,255,212,.5), 0 4px 20px #000;
+    background: linear-gradient(90deg,#7fffd4,#6ad0ff,#ffffff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  #menu h2 { font-size: 16px; letter-spacing: 8px; opacity: .7; margin-bottom: 34px; text-transform: uppercase; }
+  #menu .card { background: rgba(10,16,22,.7); border:1px solid rgba(127,255,212,.25); border-radius: 12px; padding: 26px 34px; max-width: 560px; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+  #menu .keys { display:grid; grid-template-columns: 1fr 1fr; gap: 8px 30px; font-size: 14px; text-align: left; margin: 8px 0 22px; }
+  #menu .keys span b { display:inline-block; min-width: 92px; color: var(--hud); }
+  #playbtn { pointer-events: auto; cursor: pointer; font-size: 20px; letter-spacing: 3px; font-weight: 700; padding: 16px 54px; border: none; border-radius: 8px; color:#04120f;
+    background: linear-gradient(90deg,#7fffd4,#6ad0ff); box-shadow: 0 8px 30px rgba(127,255,212,.4); transition: transform .12s, box-shadow .12s; }
+  #playbtn:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 12px 40px rgba(127,255,212,.6); }
+  #sub { margin-top: 18px; font-size: 12px; opacity: .55; letter-spacing: 1px; }
+  #loading { font-size:15px; letter-spacing:3px; opacity:.8; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="vignette"></div>
+<div id="damage"></div>
+
+<div id="hud">
+  <div id="wave">Wave <b id="waveN">1</b><br><span id="alive">Hostiles: 0</span></div>
+  <div id="kill">KILLS<br><b id="kills">0</b></div>
+  <div class="bar-wrap">
+    <div class="bar-label">Health</div>
+    <div class="bar"><i id="hpfill"></i></div>
+  </div>
+  <div id="gren">GRENADES<br><b id="grenN">4</b></div>
+  <div id="ammo"><div class="cal">5.56 MM · ASSAULT RIFLE</div><div class="num"><span id="ammoN">30</span><small> / <span id="ammoRes">120</span></small></div></div>
+  <div id="cross"><div id="crossdot"></div></div>
+  <div id="hitmarker"><i></i><i></i><i></i><i></i></div>
+  <div id="msg"></div>
+  <div id="prompt"></div>
+</div>
+
+<div id="scope">
+  <div class="lineH"></div><div class="lineV"></div>
+  <div class="ret"></div>
+</div>
+
+<div id="menu">
+  <h1>CITY STORM</h1>
+  <h2>Operation: Urban Override</h2>
+  <div class="card">
+    <div id="loading">INITIALIZING COMBAT ZONE…</div>
+    <div class="keys" id="keys" style="display:none">
+      <span><b>W A S D</b> Move</span>
+      <span><b>Mouse</b> Look</span>
+      <span><b>Left Click</b> Fire</span>
+      <span><b>Right Click</b> Aim Scope</span>
+      <span><b>Space</b> Jump</span>
+      <span><b>Shift</b> Sprint</span>
+      <span><b>R</b> Reload</span>
+      <span><b>1 / 2</b> Switch Weapon</span>
+      <span><b>Q</b> Throw Grenade</span>
+      <span><b>E</b> Use / Pick up</span>
+    </div>
+    <button id="playbtn">DEPLOY</button>
+    <div id="sub">Click DEPLOY then click the screen to lock the mouse. Press ESC to release.</div>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module" src="./game.js"></script>
+</body>
+</html>
