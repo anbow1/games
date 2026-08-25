@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 108dp adaptive-icon foreground; the safe zone is the middle 72dp. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- hull -->
+    <path
+        android:fillColor="#7CFC66"
+        android:pathData="M26,62 L82,62 L82,72 L26,72 Z" />
+    <!-- track skirts -->
+    <path
+        android:fillColor="#4E9E42"
+        android:pathData="M24,72 L84,72 L84,78 L24,78 Z" />
+    <!-- road wheels -->
+    <path
+        android:fillColor="#0D1A10"
+        android:pathData="M30,73 h6 v4 h-6 z M40,73 h6 v4 h-6 z M50,73 h6 v4 h-6 z M60,73 h6 v4 h-6 z M70,73 h6 v4 h-6 z" />
+    <!-- turret -->
+    <path
+        android:fillColor="#9EFF9E"
+        android:pathData="M40,50 L68,50 L72,62 L36,62 Z" />
+    <!-- 120 mm gun -->
+    <path
+        android:fillColor="#9EFF9E"
+        android:pathData="M66,53 L94,53 L94,57 L66,57 Z" />
+    <!-- muzzle brake -->
+    <path
+        android:fillColor="#FFD24A"
+        android:pathData="M88,51 L94,51 L94,59 L88,59 Z" />
+    <!-- commander's cupola -->
+    <path
+        android:fillColor="#9EFF9E"
+        android:pathData="M46,44 L56,44 L56,50 L46,50 Z" />
+</vector>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Draw into the display cutout: the HUD already respects safe-area insets in CSS. -->
+    <style name="Theme.SteelThunder" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/tank_bg</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+    </style>
+</resources>
