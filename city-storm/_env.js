@@ -28,8 +28,21 @@ class El {
 const els = new Map();
 function getEl(id) { if (!els.has(id)) els.set(id, new El()); return els.get(id); }
 
+// Minimal canvas + 2d context mock for procedural texture generation.
+function makeCtx() {
+  const grad = { addColorStop() {} };
+  return {
+    fillStyle: '', strokeStyle: '', lineWidth: 1, globalAlpha: 1,
+    fillRect() {}, strokeRect() {}, beginPath() {}, moveTo() {}, lineTo() {},
+    stroke() {}, fill() {}, clearRect() {},
+    createLinearGradient() { return grad; }, createRadialGradient() { return grad; },
+  };
+}
+function makeCanvas() { return { width: 0, height: 0, getContext: () => makeCtx() }; }
+
 global.document = {
   getElementById: getEl,
+  createElement: (t) => (t === 'canvas' ? makeCanvas() : new El()),
   querySelector: () => new El(),
   querySelectorAll: () => [],
   addEventListener() {},

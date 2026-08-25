@@ -8,4 +8,9 @@ class EffectComposer {
   setSize(w, h) { this._w = w; this._h = h; }
   render() {}
 }
-export { EffectComposer, RenderPass, UnrealBloomPass };
+class ShaderPass {
+  constructor(shader) { this.uniforms = (shader && shader.uniforms) || {}; this.material = { uniforms: this.uniforms }; }
+}
+const GammaCorrectionShader = { name: 'GammaCorrectionShader', uniforms: {} };
+const FXAAShader = { name: 'FXAAShader', uniforms: { resolution: { value: { set() {} } } } };
+export { EffectComposer, RenderPass, UnrealBloomPass, ShaderPass, GammaCorrectionShader, FXAAShader };

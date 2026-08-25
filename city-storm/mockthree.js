@@ -30,6 +30,7 @@ class Color {
   setHex(c) { this.r = ((c >> 16) & 255) / 255; this.g = ((c >> 8) & 255) / 255; this.b = (c & 255) / 255; return this; }
   setHSL(h, s, l) { this.r = this.g = this.b = l; return this; }
   copy(c) { this.r = c.r; this.g = c.g; this.b = c.b; return this; }
+  set(c) { return this.setHex(c); }
 }
 
 class Euler {
@@ -82,6 +83,8 @@ class Light extends Object3D {
   constructor(intensity = 1) {
     super();
     this.intensity = intensity;
+    this.color = new Color(0xffffff);
+    this.target = new Object3D();
     this.isLight = true;
     this.shadow = {
       mapSize: new Vector(),
@@ -132,6 +135,7 @@ class WebGLRenderer {
   constructor(opts) { this.options = opts; this.shadowMap = { enabled: false, type: 0 }; this.toneMapping = 0; this.toneMappingExposure = 1; this.outputColorSpace = 'sRGB'; }
   setSize(w, h) { this._w = w; this._h = h; }
   setPixelRatio(r) { this.pixelRatio = r; }
+  getPixelRatio() { return this.pixelRatio || 1; }
   render() {}
 }
 
@@ -146,6 +150,31 @@ class MeshStandardMaterial {}
 class MeshBasicMaterial {}
 class LineBasicMaterial {}
 class SpriteMaterial {}
+class ShaderMaterial {}
+
+class Texture {
+  constructor(image) {
+    this.image = image;
+    this.wrapS = 0; this.wrapT = 0;
+    this.repeat = { x: 1, y: 1, set(x, y) { this.x = x; this.y = y; } };
+    this.offset = { x: 0, y: 0 };
+    this.anisotropy = 1; this.colorSpace = ''; this.needsUpdate = false;
+  }
+  clone() { return new Texture(this.image); }
+}
+class CanvasTexture extends Texture {}
+
+class InstancedMesh extends Mesh {
+  constructor(geometry, material, count = 0) {
+    super(geometry, material);
+    this.count = count;
+    this.instanceMatrix = { needsUpdate: false };
+    this.instanceColor = null;
+  }
+  setMatrixAt() {}
+  setColorAt() { if (!this.instanceColor) this.instanceColor = { needsUpdate: false }; }
+  getComputedMatrix() { return {}; }
+}
 
 class PointerLockControls {
   constructor(camera, domElement) { this.camera = camera; this.domElement = domElement; this._locked = false; this._handlers = {}; }
@@ -160,16 +189,23 @@ class PointerLockControls {
 const Vector3 = Vector;
 const Vector2 = Vector;
 
+// Enum constants (numeric identity doesn't matter for the mock)
+const PCFSoftShadowMap = 0, ACESFilmicToneMapping = 1, SRGBColorSpace = 'sRGB';
+const AdditiveBlending = 1, DoubleSide = 2, FrontSide = 0, BackSide = 3;
+const RepeatWrapping = 3, NearestFilter = 4, LinearFilter = 5;
+
 // Namespace object (default export) — convenience only.
 const THREE = {
   Vector3, Color, Vector2, Object3D, Group, Mesh, Line, Sprite, Camera,
   PerspectiveCamera, Light, DirectionalLight, HemisphereLight, AmbientLight, PointLight,
   Scene, Raycaster, Clock, WebGLRenderer, Fog, FogExp2,
   BoxGeometry, CylinderGeometry, SphereGeometry, PlaneGeometry, RingGeometry, TorusGeometry, BufferGeometry,
-  MeshStandardMaterial, MeshBasicMaterial, LineBasicMaterial, SpriteMaterial,
+  MeshStandardMaterial, MeshBasicMaterial, LineBasicMaterial, SpriteMaterial, ShaderMaterial,
+  Texture, CanvasTexture, InstancedMesh,
   PointerLockControls,
-  PCFSoftShadowMap: 0, ACESFilmicToneMapping: 1, SRGBColorSpace: 'sRGB',
+  PCFSoftShadowMap: 0, ACESFilmicToneMapping: 1, SRGBColorSpace: 'sRGB', BackSide: 3,
   AdditiveBlending: 1, DoubleSide: 2, FrontSide: 0,
+  RepeatWrapping: 3, NearestFilter: 4, LinearFilter: 5,
 };
 
 export {
@@ -177,7 +213,8 @@ export {
   PerspectiveCamera, Light, DirectionalLight, HemisphereLight, AmbientLight, PointLight,
   Scene, Raycaster, Clock, WebGLRenderer, Fog, FogExp2,
   BoxGeometry, CylinderGeometry, SphereGeometry, PlaneGeometry, RingGeometry, TorusGeometry, BufferGeometry,
-  MeshStandardMaterial, MeshBasicMaterial, LineBasicMaterial, SpriteMaterial,
+  MeshStandardMaterial, MeshBasicMaterial, LineBasicMaterial, SpriteMaterial, ShaderMaterial,
+  Texture, CanvasTexture, InstancedMesh,
   PointerLockControls,
 };
 export default THREE;
