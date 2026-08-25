@@ -26,10 +26,13 @@ const source = fs.readFileSync(SRC, 'utf8');
 const COPIES = [path.join(ROOT, 'city-storm', 'photoreal.js')];
 
 /** Inline targets get the exports stripped and the body spliced in. */
+// tank-battle-android is deliberately absent: it bundles its own trimmed copy of
+// Three.js that has no SMAAPass, and the post chain needs gating behind the
+// touch build's quality presets before it is safe on a phone. Until that port
+// happens it stays on the older renderer rather than being half-synced.
 const INLINE = [
   path.join(ROOT, 'tank-battle', 'index.html'),
   path.join(ROOT, 'falcon-strike', 'index.html'),
-  path.join(ROOT, 'tank-battle-android', 'app', 'src', 'main', 'assets', 'game', 'index.html'),
 ];
 
 // Inlined copies are wrapped in an IIFE that exposes only the exported names.
