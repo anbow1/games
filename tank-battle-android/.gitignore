@@ -1,9 +1,15 @@
-# Android / Gradle build output
-.gradle/
-build/
-app/build/
-local.properties
-*.iml
+# Android / Gradle build output.
+#
+# These are anchored with a leading slash on purpose: an unanchored `build/` also
+# matches the vendored three.js directory at
+# app/src/main/assets/game/vendor/three/build/, which silently drops the library
+# from the APK and leaves the game on a black screen.
+/.gradle/
+/build/
+/app/build/
+/app/.cxx/
+/captures/
+/local.properties
+
 .idea/
-.cxx/
-captures/
+*.iml

@@ -13,6 +13,12 @@ on:
 permissions:
   contents: write
 
+# Two runs racing to replace the android-latest release can leave it without an
+# asset, so a newer push cancels the one already in flight.
+concurrency:
+  group: android-apk
+  cancel-in-progress: true
+
 jobs:
   apk:
     runs-on: ubuntu-latest
