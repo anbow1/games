@@ -32,7 +32,20 @@ const INLINE = [
   path.join(ROOT, 'tank-battle-android', 'app', 'src', 'main', 'assets', 'game', 'index.html'),
 ];
 
-const inlineBody = [BEGIN, source.replace(/^export /gm, ''), END].join('\n');
+// Inlined copies are wrapped in an IIFE that exposes only the exported names.
+// Splicing the module body straight into a game's script would drop internals
+// like `fbm` and `texture` into its scope — and both single-file games already
+// define an `fbm` of their own, which is a duplicate-declaration SyntaxError.
+const exported = [...source.matchAll(/^export (?:function|const) ([A-Za-z0-9_$]+)/gm)].map((m) => m[1]);
+if (!exported.length) { console.error('no exports found in shared/photoreal.js'); process.exit(1); }
+const inlineBody = [
+  BEGIN,
+  'const PR = (() => {',
+  source.replace(/^export /gm, ''),
+  `return { ${exported.join(', ')} };`,
+  '})();',
+  END,
+].join('\n');
 
 let stale = 0;
 const write = (file, next) => {
