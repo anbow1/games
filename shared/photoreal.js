@@ -24,7 +24,7 @@
    Each game folder keeps its own copy so it stays self-contained: city-storm
    imports photoreal.js next to its game.js, while the two single-file games
    have the source inlined into their HTML. Edit this file, then run
-   tools/sync-photoreal.mjs to propagate it.
+   tools/sync-shared.mjs to propagate it.
 
    Requires: THREE (r150+) in scope.
 ============================================================================= */

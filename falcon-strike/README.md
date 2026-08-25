@@ -6,7 +6,7 @@ Modern fighter jet combat — single-file Three.js game. Open `index.html` in a 
 
 Rendered through the shared kit in [`shared/photoreal.js`](../shared/photoreal.js), inlined into
 this file between the `photoreal kit` markers — edit the shared source and run
-`node tools/sync-photoreal.mjs`, not the copy here.
+`node tools/sync-shared.mjs`, not the copy here.
 
 - The existing sky shader now also seeds a PMREM light probe, so the airframe reflects the
   sky it is flying through instead of being lit only by the sun and a hemisphere.

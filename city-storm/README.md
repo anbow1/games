@@ -9,7 +9,7 @@ the Three.js CDN.
 ## Look
 
 Dusk city canyon, rendered through the shared kit in [`shared/photoreal.js`](../shared/photoreal.js)
-(copied here as `photoreal.js` — run `node tools/sync-photoreal.mjs` after editing the shared file).
+(copied here as `photoreal.js` — run `node tools/sync-shared.mjs` after editing the shared file).
 
 - The sky shader feeds both the background and a prefiltered PMREM probe, so glass and
   steel reflect the same sky the player sees.

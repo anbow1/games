@@ -2,6 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#05080d">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect width=%2716%27 height=%2716%27 fill=%27%2305080d%27/%3E%3Cpath d=%27M8 2 L9.4 7 L15 8.6 L9.4 9.4 L8 14 L6.6 9.4 L1 8.6 L6.6 7 Z%27 fill=%27%237fd4ff%27/%3E%3C/svg%3E">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FALCON STRIKE — modern fighter combat</title>
 <style>
@@ -9,7 +13,7 @@
   canvas{display:block;}
   #gl{position:fixed;inset:0;}
   #hud{position:fixed;inset:0;pointer-events:none;z-index:5;}
-  .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:10;background:radial-gradient(ellipse at center,rgba(6,14,26,.72),rgba(3,8,15,.9));color:#cfe6f5;}
+  .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:20;background:radial-gradient(ellipse at center,rgba(6,14,26,.72),rgba(3,8,15,.9));color:#cfe6f5;}
   .panel{max-width:720px;width:92%;border:1px solid rgba(120,200,255,.35);box-shadow:0 0 40px rgba(40,140,255,.25), inset 0 0 60px rgba(30,90,180,.12);background:rgba(8,18,32,.72);padding:34px 40px;border-radius:6px;backdrop-filter:blur(3px);}
   h1{margin:0 0 4px;font-size:52px;letter-spacing:10px;color:#eaf6ff;text-shadow:0 0 18px rgba(90,180,255,.8);font-weight:700;}
   .sub{color:#7fb6dd;letter-spacing:4px;font-size:13px;margin-bottom:22px;text-transform:uppercase;}
@@ -24,11 +28,28 @@
   #endTitle{color:#ff9a6a;}
   .stat{font-size:16px;color:#cfe6f5;margin:4px 0;letter-spacing:1px;}
   .stat b{color:#ffd98a;font-family:Consolas,monospace;}
+
+  /* ===================== ANDROID TOUCH BUILD ===================== */
+  html,body{width:100%;height:100%;touch-action:none;overscroll-behavior:none;
+    -webkit-user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+  /* The briefing panel is a wall of text on a 4-inch screen; scale it to the
+     viewport height and let it scroll rather than clipping the launch prompt. */
+  .overlay{padding:1.5vh;overflow-y:auto}
+  .panel{max-width:none;width:96%;padding:2vh 3vh;font-size:1.7vh}
+  .panel h1{font-size:5.2vh!important;letter-spacing:.9vh!important}
+  .panel .sub{font-size:1.8vh!important}
+  .panel h2,.panel .k{font-size:1.6vh!important}
+  .panel td,.panel tr,.panel div{font-size:1.6vh}
+  .setRow{margin-top:1.2vh;font-size:1.5vh;display:flex;align-items:center;justify-content:center;gap:.7vh}
+  .setLbl{color:#7fa8c8;letter-spacing:.2vh;width:20vh;text-align:right}
+  .sbtn{pointer-events:auto;cursor:pointer;font-family:inherit;font-size:1.5vh;letter-spacing:.15vh;
+    padding:.7vh 1.7vh;color:#bcd6ea;border:1px solid rgba(120,200,255,.35);background:rgba(8,22,40,.7)}
+  .sbtn.sel{border-color:#7fd4ff;color:#04121e;background:#7fd4ff}
 </style>
 <script type="importmap">
 { "imports": {
-  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  "three": "./vendor/three/build/three.module.min.js",
+  "three/addons/": "./vendor/three/examples/jsm/"
 } }
 </script>
 </head>
@@ -68,7 +89,19 @@
       Hold a bandit in the reticle until <b>LOCK</b>, then fire: IR (T) locks fast but dies at range,
       radar (M) locks out to 3&nbsp;km. Red blips on radar are bandits. Kill them before they find you.
     </p>
-    <div class="hint">CLICK ANYWHERE TO LAUNCH</div>
+    <div id="ctrlMap" style="margin:1.4vh 0 .4vh;font-size:1.5vh;color:#9dbdd6;letter-spacing:.1vh">
+      <div style="border:1px dashed rgba(120,200,255,.3);background:rgba(8,22,40,.5);padding:1vh;text-align:center;line-height:1.5">
+        &#9678; LEFT STICK — pitch &amp; roll &nbsp;·&nbsp; A/B &amp; IDLE — throttle &nbsp;·&nbsp; &#9664; &#9654; — rudder
+      </div>
+      <div style="border:1px dashed rgba(255,170,110,.35);background:rgba(40,20,8,.4);padding:1vh;margin-top:.6vh;text-align:center;line-height:1.5;color:#ffbe8a">
+        &#9673; RIGHT — GUNS held &nbsp;·&nbsp; IR / RADAR / FFAR tapped
+      </div>
+    </div>
+    <div class="setRow"><span class="setLbl">GRAPHICS</span>
+      <button class="sbtn" data-q="low">LOW</button><button class="sbtn" data-q="med">MEDIUM</button><button class="sbtn" data-q="high">HIGH</button></div>
+    <div class="setRow"><span class="setLbl">PITCH</span>
+      <button class="sbtn" data-inv="0">NORMAL</button><button class="sbtn" data-inv="1">INVERTED</button></div>
+    <div class="hint" style="margin-top:1.2vh">TAP ANYWHERE TO LAUNCH</div>
   </div>
 </div>
 
@@ -1036,6 +1069,368 @@ return { metalPanels, roughSurface, fabric, wood, skin, skyEnvironment, applyEnv
 })();
 /* === END photoreal kit === */
 
+/* === BEGIN touch kit (generated by tools/sync-shared.mjs) === */
+const TC = (() => {
+/* =============================================================================
+   TOUCH CONTROLS — on-screen controls shared by the Android builds
+   =============================================================================
+
+   All three games were written for keyboard and mouse. Rather than hand-rolling
+   a control layer per game, each one declares what it needs — an analog stick,
+   a drag pad, some buttons — and this module builds it.
+
+   Two things it gets right that a naive implementation does not:
+
+     - Every pointer is tracked by id, so driving, aiming and firing happen at
+       once. A single-touch implementation feels broken within seconds.
+     - The stick floats: it snaps to wherever the thumb lands inside its zone
+       rather than making the player find a fixed pad they cannot see.
+
+   Layout is in vh units throughout, so the controls stay thumb-sized on a
+   4-inch phone and on a tablet without a media query in sight. Safe-area insets
+   are respected, which matters on any device with a cutout or gesture bar.
+
+   Requires nothing but the DOM.
+============================================================================= */
+
+const CSS = `
+.tc-layer{position:absolute;inset:0;z-index:6;display:none;touch-action:none;
+  --tc-sl:env(safe-area-inset-left,0px);--tc-sr:env(safe-area-inset-right,0px);
+  --tc-sb:env(safe-area-inset-bottom,0px);--tc-st:env(safe-area-inset-top,0px)}
+.tc-layer.tc-on{display:block}
+.tc-hint{position:absolute;left:0;right:0;pointer-events:none;display:flex;
+  align-items:center;justify-content:center;transition:opacity 1.2s}
+.tc-hint b{font-weight:400;font-size:2.2vh;letter-spacing:.45vh;
+  color:rgba(210,235,215,.55);text-shadow:0 0 1vh rgba(0,0,0,.95)}
+.tc-stick{position:absolute;border-radius:50%;pointer-events:none;opacity:.5;
+  border:1px solid rgba(190,225,200,.30);
+  background:radial-gradient(circle,rgba(12,26,16,.30),rgba(4,10,6,.55));
+  transition:opacity .18s}
+.tc-stick.tc-live{opacity:1}
+.tc-stick::before{content:"";position:absolute;inset:38%;border-radius:50%;
+  border:1px solid rgba(190,225,200,.18)}
+.tc-knob{position:absolute;left:50%;top:50%;border-radius:50%;
+  border:1px solid rgba(200,240,210,.55);background:rgba(48,104,64,.45);
+  box-shadow:0 0 2vh rgba(140,220,160,.30)}
+.tc-btn{position:absolute;display:flex;align-items:center;justify-content:center;
+  text-align:center;line-height:1.3;letter-spacing:.15vh;overflow:hidden;
+  font-family:inherit;color:#d6e6da;user-select:none;-webkit-user-select:none;
+  border:1px solid rgba(160,215,175,.42);background:rgba(10,26,14,.52);
+  box-shadow:0 0 2vh rgba(0,0,0,.5) inset}
+.tc-btn.tc-round{border-radius:50%}
+.tc-btn.tc-pill{border-radius:1vh}
+.tc-btn.tc-press{background:rgba(60,150,80,.68);box-shadow:0 0 2.4vh rgba(140,220,160,.5)}
+.tc-btn.tc-hot{border-color:#ffd24a;color:#ffd24a}
+.tc-btn.tc-off{opacity:.42}
+.tc-btn.tc-warm{border-color:rgba(255,150,95,.62);background:rgba(52,18,8,.55);color:#ffbe8a}
+.tc-btn.tc-warm.tc-press{background:rgba(190,78,28,.8);color:#fff}
+.tc-btn>span{position:relative;z-index:1}
+.tc-ring{position:absolute;inset:0;border-radius:50%;z-index:0}
+.tc-sub{display:block;font-size:1.45vh;opacity:.85}
+.tc-col{position:absolute;display:flex;flex-direction:column-reverse;gap:1.1vh}
+/* Buttons are absolutely positioned by default, but ones inside a column have
+   to stay in flow or they all stack on the column's origin. */
+.tc-col>.tc-btn{position:relative;left:auto;right:auto;top:auto;bottom:auto}
+`;
+
+let cssInjected = false;
+function injectCSS() {
+  if (cssInjected) return;
+  cssInjected = true;
+  const s = document.createElement('style');
+  s.textContent = CSS;
+  document.head.appendChild(s);
+}
+
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+
+/** Place an element from one of the four corners, in vh units. */
+function anchorTo(el, anchor, x, y, w, h) {
+  el.style.width = w != null ? `${w}vh` : '';
+  el.style.height = h != null ? `${h}vh` : '';
+  const L = 'calc(' + x + 'vh + var(--tc-sl))', R = 'calc(' + x + 'vh + var(--tc-sr))';
+  const B = 'calc(' + y + 'vh + var(--tc-sb))', T = 'calc(' + y + 'vh + var(--tc-st))';
+  el.style.left = el.style.right = el.style.top = el.style.bottom = '';
+  if (anchor[1] === 'l') el.style.left = L; else el.style.right = R;
+  if (anchor[0] === 't') el.style.top = T; else el.style.bottom = B;
+}
+
+/**
+ * Build a control layer.
+ *
+ * @param {object} cfg
+ * @param {object} [cfg.stick]   floating analog stick: {zone, radius, deadzone, x, y, anchor}
+ * @param {object} [cfg.pad]     drag-to-aim region: {zone, hint, hintTop, hintHeight}
+ * @param {Array}  [cfg.buttons] [{id,label,sub,kind,shape,size,w,h,anchor,x,y,accent,column}]
+ * @param {Function} [cfg.onPress]   (id) => void, fired on press for both kinds
+ * @param {Function} [cfg.onRelease] (id) => void, fired on release for kind 'hold'
+ * @param {Function} [cfg.haptic]    (ms) => void
+ */
+function createTouchControls(cfg = {}) {
+  injectCSS();
+
+  const layer = document.createElement('div');
+  layer.className = 'tc-layer';
+
+  const state = {
+    stick: { x: 0, y: 0 },
+    padDX: 0, padDY: 0,
+    held: new Set(),
+    enabled: false,
+  };
+
+  const haptic = cfg.haptic || ((ms) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} });
+
+  /* ------------------------------- drag pad ------------------------------ */
+  let hintEl = null, hintFaded = false;
+  if (cfg.pad) {
+    hintEl = document.createElement('div');
+    hintEl.className = 'tc-hint';
+    hintEl.style.top = (cfg.pad.hintTop != null ? cfg.pad.hintTop : 0) + '%';
+    hintEl.style.height = (cfg.pad.hintHeight != null ? cfg.pad.hintHeight : 42) + '%';
+    hintEl.innerHTML = `<b>${cfg.pad.hint || 'DRAG TO AIM'}</b>`;
+    layer.appendChild(hintEl);
+  }
+  const fadeHint = () => {
+    if (hintFaded || !hintEl) return;
+    hintFaded = true;
+    hintEl.style.opacity = '0';
+  };
+
+  /* -------------------------------- stick -------------------------------- */
+  let stickEl = null, knobEl = null, stickR = 80;
+  if (cfg.stick) {
+    stickEl = document.createElement('div');
+    stickEl.className = 'tc-stick';
+    knobEl = document.createElement('div');
+    knobEl.className = 'tc-knob';
+    stickEl.appendChild(knobEl);
+    layer.appendChild(stickEl);
+  }
+
+  function layoutStick() {
+    if (!stickEl) return;
+    const vh = innerHeight / 100;
+    const d = (cfg.stick.radius != null ? cfg.stick.radius : 11) * 2;
+    stickR = (d / 2) * vh;
+    anchorTo(stickEl, cfg.stick.anchor || 'bl',
+      cfg.stick.x != null ? cfg.stick.x : 3,
+      cfg.stick.y != null ? cfg.stick.y : 3, d, d);
+    const kd = d * 0.39;
+    knobEl.style.width = knobEl.style.height = `${kd}vh`;
+    knobEl.style.margin = `${-kd / 2}vh 0 0 ${-kd / 2}vh`;
+  }
+
+  function placeStick(x, y) {
+    const cx = clamp(x, stickR + 2, innerWidth - stickR - 2);
+    const cy = clamp(y, stickR + 2, innerHeight - stickR - 2);
+    stickEl.style.left = `${cx - stickR}px`;
+    stickEl.style.top = `${cy - stickR}px`;
+    stickEl.style.right = stickEl.style.bottom = 'auto';
+    stickEl.classList.add('tc-live');
+    return { x: cx, y: cy };
+  }
+
+  function resetStick() {
+    if (!stickEl) return;
+    knobEl.style.transform = '';
+    stickEl.classList.remove('tc-live');
+    stickEl.style.left = stickEl.style.top = stickEl.style.right = stickEl.style.bottom = '';
+    layoutStick();
+    state.stick.x = state.stick.y = 0;
+  }
+
+  function moveStick(cx, cy, x, y) {
+    let dx = x - cx, dy = y - cy;
+    const d = Math.hypot(dx, dy);
+    if (d > stickR) { dx = dx / d * stickR; dy = dy / d * stickR; }
+    knobEl.style.transform = `translate(${dx.toFixed(1)}px,${dy.toFixed(1)}px)`;
+    const nx = dx / stickR, ny = dy / stickR;
+    const mag = Math.hypot(nx, ny);
+    const dz = cfg.stick.deadzone != null ? cfg.stick.deadzone : 0.14;
+    const k = mag > dz ? (mag - dz) / (1 - dz) / mag : 0;   // radial dead zone
+    state.stick.x = nx * k;
+    state.stick.y = ny * k;
+  }
+
+  /* ------------------------------- buttons ------------------------------- */
+  const buttons = new Map();
+  const columns = new Map();
+
+  for (const b of (cfg.buttons || [])) {
+    const el = document.createElement('div');
+    el.className = 'tc-btn ' + (b.shape === 'round' ? 'tc-round' : 'tc-pill');
+    if (b.accent === 'warm') el.classList.add('tc-warm');
+    const ring = document.createElement('div');
+    ring.className = 'tc-ring';
+    el.appendChild(ring);
+    const span = document.createElement('span');
+    span.innerHTML = b.sub ? `${b.label}<b class="tc-sub">${b.sub}</b>` : b.label;
+    el.appendChild(span);
+    el.dataset.id = b.id;
+
+    if (b.column) {
+      let col = columns.get(b.column);
+      if (!col) {
+        col = document.createElement('div');
+        col.className = 'tc-col';
+        columns.set(b.column, col);
+        layer.appendChild(col);
+      }
+      col.appendChild(el);
+    } else {
+      layer.appendChild(el);
+    }
+    buttons.set(b.id, { cfg: b, el, ring, span });
+  }
+
+  function layoutButtons() {
+    for (const [, col] of columns) col.style.cssText = col.style.cssText;  // keep inline anchors
+    for (const [, b] of buttons) {
+      const c = b.cfg;
+      if (c.shape === 'round') {
+        b.el.style.width = b.el.style.height = `${c.size}vh`;
+        b.el.style.fontSize = `${c.size * 0.135}vh`;
+      } else {
+        b.el.style.width = `${c.w != null ? c.w : 16}vh`;
+        b.el.style.height = `${c.h != null ? c.h : 5.2}vh`;
+        b.el.style.fontSize = `${c.font != null ? c.font : 1.7}vh`;
+      }
+      if (!c.column) {
+        b.el.style.position = 'absolute';
+        anchorTo(b.el, c.anchor || 'br', c.x || 3, c.y || 3, null, null);
+        if (c.shape === 'round') { b.el.style.width = b.el.style.height = `${c.size}vh`; }
+        else { b.el.style.width = `${c.w != null ? c.w : 16}vh`; b.el.style.height = `${c.h != null ? c.h : 5.2}vh`; }
+      }
+    }
+    for (const [name, col] of columns) {
+      const first = [...buttons.values()].find((b) => b.cfg.column === name);
+      if (!first) continue;
+      anchorTo(col, first.cfg.anchor || 'br', first.cfg.x || 3, first.cfg.y || 3, null, null);
+    }
+  }
+
+  /* ---------------------------- pointer routing -------------------------- */
+  const pointers = new Map();
+
+  const inZone = (fn, x, y) => (typeof fn === 'function' ? fn(x, y, innerWidth, innerHeight) : false);
+  const defaultStickZone = (x, y, w, h) => x < w * 0.45 && y > h * 0.44;
+  const defaultPadZone = (x, y, w, h) => y < h * 0.44;
+
+  layer.addEventListener('pointerdown', (e) => {
+    if (e.target !== layer && e.target !== hintEl && !(hintEl && hintEl.contains(e.target))) return;
+    e.preventDefault();
+    if (!state.enabled) return;
+    try { layer.setPointerCapture(e.pointerId); } catch (err) {}
+    const x = e.clientX, y = e.clientY;
+
+    const stickZone = cfg.stick ? (cfg.stick.zone || defaultStickZone) : null;
+    if (stickZone && inZone(stickZone, x, y)) {
+      for (const p of pointers.values()) if (p.kind === 'stick') return;   // one stick at a time
+      const c = placeStick(x, y);
+      pointers.set(e.pointerId, { kind: 'stick', cx: c.x, cy: c.y });
+      moveStick(c.x, c.y, x, y);
+      return;
+    }
+    const padZone = cfg.pad ? (cfg.pad.zone || defaultPadZone) : null;
+    if (padZone && inZone(padZone, x, y)) {
+      pointers.set(e.pointerId, { kind: 'pad', lx: x, ly: y });
+      fadeHint();
+    }
+  });
+
+  layer.addEventListener('pointermove', (e) => {
+    const p = pointers.get(e.pointerId);
+    if (!p) return;
+    e.preventDefault();
+    if (p.kind === 'stick') moveStick(p.cx, p.cy, e.clientX, e.clientY);
+    else {
+      if (state.enabled) { state.padDX += e.clientX - p.lx; state.padDY += e.clientY - p.ly; }
+      p.lx = e.clientX; p.ly = e.clientY;
+    }
+  });
+
+  const endPointer = (e) => {
+    const p = pointers.get(e.pointerId);
+    if (!p) return;
+    pointers.delete(e.pointerId);
+    if (p.kind === 'stick') resetStick();
+  };
+  layer.addEventListener('pointerup', endPointer);
+  layer.addEventListener('pointercancel', endPointer);
+
+  for (const [id, b] of buttons) {
+    const c = b.cfg;
+    b.el.addEventListener('pointerdown', (e) => {
+      e.stopPropagation(); e.preventDefault();
+      if (!state.enabled) return;
+      try { b.el.setPointerCapture(e.pointerId); } catch (err) {}
+      b.el.classList.add('tc-press');
+      if (c.kind !== 'tap') state.held.add(id);
+      haptic(c.kind === 'tap' ? 12 : 18);
+      cfg.onPress && cfg.onPress(id);
+    });
+    const up = (e) => {
+      e.stopPropagation();
+      if (!b.el.classList.contains('tc-press')) return;
+      b.el.classList.remove('tc-press');
+      state.held.delete(id);
+      if (c.kind !== 'tap') cfg.onRelease && cfg.onRelease(id);
+    };
+    b.el.addEventListener('pointerup', up);
+    b.el.addEventListener('pointercancel', up);
+  }
+
+  function layout() {
+    layoutStick();
+    layoutButtons();
+  }
+
+  const api = {
+    el: layer,
+    state,
+    attach(parent) { (parent || document.body).appendChild(layer); layout(); return api; },
+    show() { state.enabled = true; layer.classList.add('tc-on'); layout(); return api; },
+    hide() { api.releaseAll(); state.enabled = false; layer.classList.remove('tc-on'); return api; },
+    /** Read and clear the accumulated pad drag; call once per frame. */
+    consumePad() {
+      const d = { dx: state.padDX, dy: state.padDY };
+      state.padDX = state.padDY = 0;
+      return d;
+    },
+    isHeld(id) { return state.held.has(id); },
+    setLabel(id, html) { const b = buttons.get(id); if (b) b.span.innerHTML = html; },
+    setHot(id, on) { const b = buttons.get(id); if (b) b.el.classList.toggle('tc-hot', !!on); },
+    setDisabled(id, on) { const b = buttons.get(id); if (b) b.el.classList.toggle('tc-off', !!on); },
+    /** Sweep a progress arc round a round button — reload timers and the like. */
+    setRing(id, frac, colour) {
+      const b = buttons.get(id);
+      if (!b) return;
+      b.ring.style.background = frac > 0 && frac < 1
+        ? `conic-gradient(${colour || 'rgba(255,160,90,.30)'} ${(frac * 360).toFixed(0)}deg, rgba(0,0,0,0) 0deg)`
+        : 'none';
+    },
+    /** Drop every latched input — call on pause, death, or an overlay opening. */
+    releaseAll() {
+      state.held.clear();
+      state.padDX = state.padDY = 0;
+      pointers.clear();
+      resetStick();
+      for (const [, b] of buttons) b.el.classList.remove('tc-press');
+    },
+    fadeHint,
+    layout,
+  };
+
+  addEventListener('resize', layout);
+  addEventListener('orientationchange', () => setTimeout(layout, 120));
+  return api;
+}
+
+return { createTouchControls };
+})();
+/* === END touch kit === */
+
 /* ============================================================ helpers */
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const lerp=(a,b,t)=>a+(b-a)*t;
@@ -1064,9 +1459,26 @@ function terrainSlope(x,z){ const e=5;
   return Math.hypot(dx,dz); }
 
 /* ============================================================ renderer / scene */
+// Screen-space AO and SMAA are each a full-screen pass at native resolution;
+// on a mid-range phone they decide whether the sim holds 60 or drops to 30, so
+// only the high preset pays for them. The light probe is a one-off bake and
+// stays on everywhere — it is what makes the airframe read as metal.
+const QUALITY_PRESETS={
+  low :{pixelRatio:0.70,shadowMap:1024,terrainSeg:110,trees:900 ,bloom:false,ao:false,smaa:false},
+  med :{pixelRatio:0.95,shadowMap:1536,terrainSeg:140,trees:1600,bloom:true ,ao:false,smaa:false},
+  high:{pixelRatio:1.30,shadowMap:2048,terrainSeg:170,trees:2400,bloom:true ,ao:true ,smaa:true },
+};
+function store(k,d){try{const v=localStorage.getItem(k);return v===null?d:v;}catch(e){return d;}}
+function storeSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+let qualityName=store('fs_quality','med');
+if(!QUALITY_PRESETS[qualityName]) qualityName='med';
+const Q=QUALITY_PRESETS[qualityName];
+let invertPitch=store('fs_invert','0')==='1';
+function haptic(p){try{navigator.vibrate&&navigator.vibrate(p);}catch(e){}}
+
 const glCanvas=document.getElementById('gl');
 const renderer=new THREE.WebGLRenderer({canvas:glCanvas, antialias:false});
-renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));   // SMAA handles the edges
+renderer.setPixelRatio(Math.min(devicePixelRatio,Q.pixelRatio));
 renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.outputColorSpace=THREE.SRGBColorSpace;
@@ -1081,7 +1493,7 @@ const SUN_DIR=new THREE.Vector3(-0.45,0.62,-0.38).normalize();
 const hemi=new THREE.HemisphereLight(0xbfd9ee, 0x3a4a3a, 1.15); scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xfff2dd, 2.4);
 sun.castShadow=true;
-sun.shadow.mapSize.set(2048,2048);
+sun.shadow.mapSize.set(Q.shadowMap,Q.shadowMap);
 sun.shadow.camera.left=-260; sun.shadow.camera.right=260;
 sun.shadow.camera.top=260; sun.shadow.camera.bottom=-260;
 sun.shadow.camera.near=50; sun.shadow.camera.far=900;
@@ -1143,7 +1555,7 @@ let seaMat = null;
 
 /* ============================================================ terrain mesh */
 {
-  const T=6000, SEG=170;
+  const T=6000, SEG=Q.terrainSeg;
   const geo=new THREE.PlaneGeometry(T,T,SEG,SEG); geo.rotateX(-Math.PI/2);
   const p=geo.attributes.position; const n=p.count;
   const colors=new Float32Array(n*3);
@@ -1187,7 +1599,7 @@ let seaMat = null;
   const coneGeo=new THREE.ConeGeometry(1,1,6);
   const treeMat=new THREE.MeshStandardMaterial({color:0xffffff, roughness:0.92, metalness:0, envMapIntensity:0.7, flatShading:true});
   let count=0; const pts=[];
-  for(let i=0;i<9000 && pts.length<2400;i++){
+  for(let i=0;i<9000 && pts.length<Q.trees;i++){
     const x=rand(-2700,2700), z=rand(-2700,2700);
     const h=terrainH(x,z);
     if(h>10 && h<135 && terrainSlope(x,z)<0.42 && Math.hypot(x+800,z-600)>180) pts.push([x,h,z]);
@@ -1487,6 +1899,7 @@ const _gPrev=V3().copy(player.vel);
 const playerJet=buildFighter({body:0x8fa3ad, nose:0x5c6b78, canopy:0x9fd0e8});
 scene.add(playerJet.group);
 
+let touch=null;   // built once the game objects it drives exist
 const input={pitch:0,roll:0,yaw:0,ab:false,idle:false,guns:false,fire:false,reload:false,fireIR:false,fireRadar:false};
 const keys={};
 
@@ -1497,6 +1910,15 @@ function updatePlayer(dt){
   pI=( (keys['KeyW']||keys['ArrowUp']?1:0) - (keys['KeyS']||keys['ArrowDown']?1:0) );
   rI=( (keys['KeyA']||keys['ArrowLeft']?1:0) - (keys['KeyD']||keys['ArrowRight']?1:0) );
   yI=( (keys['KeyQ']?1:0) - (keys['KeyE']?1:0) );
+  /* Analog stick, matching the keyboard's sense: up is nose-up unless the
+     player has asked for a real stick, where pulling back raises the nose. */
+  if(touch){
+    const st=touch.state.stick;
+    if(st.x||st.y){
+      pI = (invertPitch ? st.y : -st.y);
+      rI = -st.x;
+    }
+  }
   pI=clamp(pI,-1,1)*1.4*eff; rI=clamp(rI,-1,1)*2.6*eff; yI=clamp(yI,-1,1)*0.7*eff;
 
   /* stall nose-drop */
@@ -1916,6 +2338,8 @@ function startGame(){
   audio.init(); audio.ctx.resume();
   startScreen.style.display='none';
   state='play';
+  touch.show(); haptic(20);
+  setTimeout(()=>touch.fadeHint(), 9000);
   camMode='chase';
   playerJet.group.visible=true;
   for(let i=0;i<6;i++) spawnEnemy();
@@ -1929,7 +2353,109 @@ function endGame(title){
   document.getElementById('stTime').textContent=m+':'+String(s).padStart(2,'0');
   setTimeout(()=>{ endScreen.style.display='flex'; }, 1400);
 }
+(function initSettings(){
+  // Changing the preset has to reload: terrain segment count and shadow map
+  // size are baked at construction.
+  document.querySelectorAll('.sbtn[data-q]').forEach(b=>{
+    b.classList.toggle('sel', b.dataset.q===qualityName);
+    b.addEventListener('pointerdown', e=>{ e.stopPropagation();
+      if(b.dataset.q===qualityName) return;
+      storeSet('fs_quality', b.dataset.q); location.reload(); });
+  });
+  document.querySelectorAll('.sbtn[data-inv]').forEach(b=>{
+    b.classList.toggle('sel', (b.dataset.inv==='1')===invertPitch);
+    b.addEventListener('pointerdown', e=>{ e.stopPropagation();
+      invertPitch = b.dataset.inv==='1'; storeSet('fs_invert', b.dataset.inv);
+      document.querySelectorAll('.sbtn[data-inv]').forEach(o=>o.classList.toggle('sel', o===b)); });
+  });
+})();
 startScreen.addEventListener('pointerdown', ()=>{ if(state==='menu') startGame(); });
+
+/* ==================================================================
+ *  Touch controls
+ *
+ *  Left thumb flies, right thumb shoots. Pitch and roll come off one
+ *  analog stick because a phone has no room for separate axes, and the
+ *  throttle is two hold buttons rather than a slider — in a dogfight
+ *  nobody hunts for a slider position.
+ * ================================================================== */
+touch = TC.createTouchControls({
+  stick: {
+    // The whole left half below the HUD ribbon, so the thumb never misses.
+    zone: (x, y, w, h) => x < w * 0.46 && y > h * 0.26,
+    radius: 12, x: 3, y: 3, anchor: 'bl', deadzone: 0.10,
+  },
+  buttons: [
+    { id:'ab',   label:'A/B',  kind:'hold', shape:'pill', w:11, h:6.4, anchor:'bl', x:29,   y:12.6, font:1.9 },
+    { id:'idle', label:'IDLE', kind:'hold', shape:'pill', w:11, h:6.4, anchor:'bl', x:29,   y:4.6,  font:1.9 },
+    { id:'yawL', label:'&#9664;', kind:'hold', shape:'pill', w:7, h:6.0, anchor:'bl', x:42,  y:4.6, font:2.2 },
+    { id:'yawR', label:'&#9654;', kind:'hold', shape:'pill', w:7, h:6.0, anchor:'bl', x:50.5, y:4.6, font:2.2 },
+
+    { id:'guns', label:'GUNS', sub:'1500', kind:'hold', shape:'round', size:16.5, anchor:'br', x:3, y:3, accent:'warm' },
+    { id:'ir',   label:'IR',   sub:'2',    kind:'tap',  shape:'round', size:11,   anchor:'br', x:21, y:4.6 },
+
+    { id:'pause', label:'&#10073;&#10073; PAUSE', kind:'tap', shape:'pill', w:16.5, h:5.2, anchor:'br', x:3, y:21.5, column:'r' },
+    { id:'cam',   label:'CAM CHASE',              kind:'tap', shape:'pill', w:16.5, h:5.2, column:'r' },
+    { id:'ffar',  label:'FFAR &middot; 6',        kind:'tap', shape:'pill', w:16.5, h:5.2, column:'r' },
+    { id:'rdr',   label:'RADAR &middot; 2',       kind:'tap', shape:'pill', w:16.5, h:5.2, column:'r' },
+  ],
+  onPress(id) {
+    if (paused && id !== 'pause') return;
+    switch (id) {
+      case 'guns': input.guns = true; break;
+      case 'ab':   input.ab = true; break;
+      case 'idle': input.idle = true; break;
+      case 'yawL': keys['KeyQ'] = true; break;
+      case 'yawR': keys['KeyE'] = true; break;
+      case 'ir':   if (state === 'play') { input.fireIR = true; haptic(24); } break;
+      case 'rdr':  if (state === 'play') { input.fireRadar = true; haptic(24); } break;
+      case 'ffar': if (state === 'play') { input.fire = true; haptic(20); } break;
+      case 'cam':  camMode = camMode === 'chase' ? 'cockpit' : 'chase';
+                   touch.setLabel('cam', camMode === 'chase' ? 'CAM CHASE' : 'CAM PIT'); break;
+      case 'pause': setPaused(!paused); break;
+    }
+  },
+  onRelease(id) {
+    switch (id) {
+      case 'guns': input.guns = false; break;
+      case 'ab':   input.ab = false; break;
+      case 'idle': input.idle = false; break;
+      case 'yawL': keys['KeyQ'] = false; break;
+      case 'yawR': keys['KeyE'] = false; break;
+    }
+  },
+  haptic,
+}).attach(document.body);
+
+const pauseScreen = document.createElement('div');
+pauseScreen.className = 'overlay';
+pauseScreen.style.display = 'none';
+pauseScreen.innerHTML = '<div class="panel" style="text-align:center">' +
+  '<h1 style="margin:0 0 1vh">PAUSED</h1>' +
+  '<div class="sub" style="margin-bottom:2.5vh">ENGAGEMENT ON HOLD</div>' +
+  '<button class="sbtn" id="fsResume" style="font-size:2.4vh;padding:1.4vh 5vh">RESUME</button> ' +
+  '<button class="sbtn" id="fsAbort" style="font-size:2.4vh;padding:1.4vh 5vh">ABORT</button></div>';
+document.body.appendChild(pauseScreen);
+pauseScreen.querySelector('#fsResume').addEventListener('pointerdown', (e) => { e.stopPropagation(); setPaused(false); });
+pauseScreen.querySelector('#fsAbort').addEventListener('pointerdown', (e) => { e.stopPropagation(); location.reload(); });
+
+function setPaused(v) {
+  if (state !== 'play') return;
+  paused = v;
+  pauseScreen.style.display = v ? 'flex' : 'none';
+  // An overlay swallows the pointerup, so anything held would latch on.
+  if (v) { input.guns = input.ab = input.idle = false; keys['KeyQ'] = keys['KeyE'] = false; touch.releaseAll(); }
+}
+
+// Android hardware/gesture back: hold the engagement rather than leaving it.
+window.__androidBack = function () {
+  if (state !== 'play') return false;
+  setPaused(!paused);
+  return true;
+};
+document.addEventListener('visibilitychange', () => { if (document.hidden) setPaused(true); });
+addEventListener('contextmenu', (e) => e.preventDefault());
+
 endScreen.addEventListener('pointerdown', ()=>{ location.reload(); });
 
 addEventListener('keydown', e=>{
@@ -2121,7 +2647,10 @@ function drawHUD(){
   hx.font='11px Consolas'; hx.textAlign='center'; hx.fillStyle='rgba(140,255,190,.8)';
   hx.fillText('HULL '+Math.max(0,Math.round(player.hp))+'%', cx, H-70);
 
-  /* ammo bottom-left */
+  /* Stores and lock bars: moved off the bottom-left, where the flight stick
+     now lives, to the top-left corner which this build leaves empty. The
+     translate keeps the original layout maths intact. */
+  hx.save(); hx.translate(0, -(H-150));
   hx.textAlign='left'; hx.font='13px Consolas'; hx.fillStyle='rgba(255,220,140,.9)';
   hx.fillText('CANNON  '+guns.ammo, 26, H-108);
   hx.fillText('FFAR', 26, H-86);
@@ -2149,6 +2678,7 @@ function drawHUD(){
       hx.fillRect(110, H-50, 60*p, 12);
       hx.font='11px Consolas'; hx.fillStyle='rgba(80,200,255,.9)';
       hx.fillText(p>=1?'LOCK':'LOCKING', 176, H-44); } }
+  hx.restore();
 
   /* score top-center */
   const m=Math.floor(missionTime/60), s=Math.floor(missionTime%60);
@@ -2231,10 +2761,11 @@ try{
     {EffectComposer, RenderPass, ShaderPass, UnrealBloomPass, SMAAPass},
     {
       exposure:0.92,
-      bloomThreshold:1.10, bloomStrength:0.40, bloomRadius:0.7,
+      bloom:Q.bloom, bloomThreshold:1.10, bloomStrength:0.40, bloomRadius:0.7,
+      smaa:Q.smaa,
       // Wide, gentle occlusion: at altitude there is nothing close enough for
       // tight contact shadows, and a small radius would just add noise.
-      ao:true, aoRadius:1.6, aoIntensity:0.75, aoSamples:12, aoPower:1.1,
+      ao:Q.ao, aoRadius:1.6, aoIntensity:0.75, aoSamples:12, aoPower:1.1, aoScale:0.5,
       grade:{
         contrast:1.14, saturation:1.04, vignette:0.28,
         grain:0.028, aberration:0.0018, sharpen:0.35,
@@ -2303,6 +2834,19 @@ function frame(){
   if(!camInit){ camPos.copy(camera.position); camInit=true; }
   audio.update();
   drawHUD();
+
+  // Stores on the button faces: on a phone the canvas HUD is too small to read
+  // mid-turn, and the thumb is already looking at the button.
+  if(touch && state==='play'){
+    touch.setLabel('guns', 'GUNS<b class="tc-sub">'+guns.ammo+'</b>');
+    touch.setLabel('ir',   'IR<b class="tc-sub">'+irAmmo.count+'</b>');
+    touch.setLabel('rdr',  'RADAR &middot; '+radarAmmo.count);
+    touch.setLabel('ffar', 'FFAR &middot; '+rocketsAmmo.count);
+    touch.setDisabled('ir',   irAmmo.count<=0);
+    touch.setDisabled('rdr',  radarAmmo.count<=0);
+    touch.setDisabled('ffar', rocketsAmmo.count<=0);
+    touch.setHot('ir', locks.ir && locks.ir.t>=locks.ir.lockTime);
+  }
 
   // Scroll two offsets against each other so the swell never reads as one
   // sliding sheet of texture.

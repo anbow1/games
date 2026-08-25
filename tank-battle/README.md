@@ -6,7 +6,7 @@ A single-file, realistic-ish modern tank battle game. M1 Abrams vs T-90 — full
 
 Rendering goes through the shared kit in [`shared/photoreal.js`](../shared/photoreal.js), inlined
 into this file between the `photoreal kit` markers — edit the shared source and run
-`node tools/sync-photoreal.mjs`, not the copy here.
+`node tools/sync-shared.mjs`, not the copy here.
 
 ## Gameplay
 

@@ -2,6 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0a0e0a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect width=%2716%27 height=%2716%27 fill=%27%230a0e0a%27/%3E%3Crect x=%272%27 y=%278%27 width=%2712%27 height=%274%27 fill=%27%237cfc66%27/%3E%3Crect x=%276%27 y=%275%27 width=%275%27 height=%273%27 fill=%27%237cfc66%27/%3E%3Crect x=%2710%27 y=%276%27 width=%275%27 height=%271%27 fill=%27%237cfc66%27/%3E%3C/svg%3E">
+<meta name="mobile-web-app-capable" content="yes">
 <title>STEEL THUNDER — Modern Tank Combat</title>
 <style>
   html,body{margin:0;padding:0;overflow:hidden;background:#0a0e0a;font-family:"Consolas","Lucida Console",monospace;color:#cfe6cf;user-select:none}
@@ -49,6 +53,84 @@
   table.keys td{padding:3px 14px}
   table.keys td:first-child{color:#ffd24a;letter-spacing:1px}
   #endTitle{font-size:52px;letter-spacing:12px;margin-bottom:8px}
+
+  /* ================= ANDROID TOUCH BUILD ================= */
+  :root{--hs:1;--sl:env(safe-area-inset-left,0px);--sr:env(safe-area-inset-right,0px);--sb:env(safe-area-inset-bottom,0px)}
+  html,body{width:100%;height:100%;touch-action:none;overscroll-behavior:none;
+    -webkit-user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+  /* HUD panels scale with screen height so they stay readable on phones and tablets alike */
+  #leftPanel{transform:scale(var(--hs));transform-origin:top left;left:calc(6px + var(--sl))}
+  #mapWrap{transform:scale(var(--hs));transform-origin:top right;right:calc(6px + var(--sr))}
+  #compassWrap{transform:translateX(-50%) scale(var(--hs));transform-origin:top center}
+  #bottomBar{transform:translateX(-50%) scale(var(--hs));transform-origin:bottom center;
+    bottom:calc(2px + var(--sb));gap:2.2vh;font-size:1.7vh;padding:.5vh 2vh}
+  #speedo{font-size:2.8vh}
+  #msgs{top:9vh;font-size:1.9vh}
+  #hitmark{font-size:4.4vh}
+  .sight{left:-17vh;top:-17vh;width:34vh;height:34vh}
+  .sight::before{inset:8.4vh}
+  #chCircle{width:16vh;height:16vh;left:-8vh;top:-8vh}
+  #stTop{left:-15vh;top:-22vh;width:30vh;font-size:1.6vh}
+  #stBot{left:-15vh;top:21vh;width:30vh;font-size:1.6vh}
+  /* overlays sized in vh so they never overflow a short landscape viewport */
+  .overlay{padding:2vh;overflow-y:auto}
+  .overlay h1{font-size:5.4vh;letter-spacing:1.1vh;margin:0 0 .5vh}
+  .overlay h2{font-size:1.9vh;letter-spacing:.45vh;margin-bottom:1.8vh}
+  .tankbtn{width:33vh;font-size:2vh;padding:1.3vh;margin:.6vh}
+  .tankbtn span{font-size:1.4vh!important}
+  .startbtn{margin-top:2vh;padding:1.5vh 6vh;font-size:2.6vh;letter-spacing:.7vh}
+  #endTitle{font-size:6vh;letter-spacing:1.4vh}
+
+  /* ---- start-screen control map + settings ---- */
+  #ctrlMap{width:min(78vw,86vh);margin:1.6vh auto .4vh;font-size:1.5vh;color:#9dbf9f;letter-spacing:.1vh}
+  .cm{border:1px dashed rgba(120,255,150,.3);background:rgba(8,22,12,.5);padding:1vh .6vh;text-align:center;line-height:1.5}
+  .cm span{color:#7fae82;font-size:1.25vh}
+  .cmRow{display:flex;gap:.6vh;margin-top:.6vh}
+  .cmRow>.cm{flex:1}
+  .cmDrive{color:#9eff9e}.cmFire{color:#ffbe8a;border-color:rgba(255,140,90,.4)}
+  .cmSpacer{border-style:none;background:none}
+  .setRow{margin-top:1vh;font-size:1.4vh;display:flex;align-items:center;justify-content:center;gap:.6vh}
+  .setLbl{color:#7fae82;letter-spacing:.25vh;width:19vh;text-align:right}
+  .sbtn{pointer-events:auto;cursor:pointer;font-family:inherit;font-size:1.4vh;letter-spacing:.15vh;
+    padding:.7vh 1.6vh;color:#9dbf9f;border:1px solid rgba(120,255,150,.3);background:rgba(10,30,14,.6)}
+  .sbtn.sel{border-color:#9eff9e;color:#0a140c;background:#7cfc66}
+
+  /* ---- touch control layer ---- */
+  #touch{position:absolute;inset:0;z-index:6;display:none;touch-action:none}
+  #touch.on{display:block}
+  #turretHint{position:absolute;left:0;right:0;top:0;height:44%;pointer-events:none;
+    border-bottom:1px dashed rgba(120,255,150,.16);transition:opacity 1.2s;
+    display:flex;align-items:center;justify-content:center}
+  #turretHint b{font-weight:normal;font-size:2.2vh;letter-spacing:.45vh;color:rgba(158,255,158,.6);
+    text-shadow:0 0 1vh rgba(0,0,0,.95)}
+  #stick{position:absolute;width:22vh;height:22vh;border-radius:50%;pointer-events:none;opacity:.55;
+    border:1px solid rgba(120,255,150,.3);background:radial-gradient(circle,rgba(10,30,14,.3),rgba(4,12,6,.55));
+    left:calc(3vh + var(--sl));bottom:calc(3vh + var(--sb));transition:opacity .2s}
+  #stick.live{opacity:1}
+  #stick::before{content:"";position:absolute;inset:38%;border-radius:50%;border:1px solid rgba(120,255,150,.18)}
+  #stickKnob{position:absolute;left:50%;top:50%;width:8.6vh;height:8.6vh;margin:-4.3vh 0 0 -4.3vh;border-radius:50%;
+    border:1px solid rgba(158,255,158,.55);background:rgba(40,110,55,.45);box-shadow:0 0 2vh rgba(120,255,150,.3)}
+  .tbtn{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;
+    font-family:inherit;line-height:1.35;letter-spacing:.18vh;color:#cfe6cf;overflow:hidden;
+    border:1px solid rgba(120,255,150,.45);background:rgba(10,30,14,.5);box-shadow:0 0 2vh rgba(0,0,0,.5) inset}
+  .tbtn.press{background:rgba(60,150,80,.7);box-shadow:0 0 2.4vh rgba(120,255,150,.55)}
+  .tbtn>* {position:relative;z-index:1}
+  #btnFire{right:calc(3vh + var(--sr));bottom:calc(3vh + var(--sb));width:16.5vh;height:16.5vh;font-size:2.1vh;
+    border-color:rgba(255,150,95,.65);background:rgba(52,18,8,.55);color:#ffbe8a}
+  #btnFire.press{background:rgba(190,78,28,.8);color:#fff}
+  #btnFire.rl{opacity:.5}
+  #fireRing{position:absolute;inset:0;border-radius:50%;z-index:0}
+  #fireAmmo{display:block;font-size:1.5vh;color:#ffd24a}
+  #btnMG{right:calc(21vh + var(--sr));bottom:calc(4.6vh + var(--sb));width:11.6vh;height:11.6vh;font-size:1.8vh}
+  #utilCol{position:absolute;right:calc(3vh + var(--sr));bottom:calc(21.5vh + var(--sb));
+    display:flex;flex-direction:column-reverse;gap:1.1vh}
+  .ubtn{width:16.5vh;height:5.1vh;border-radius:1vh;display:flex;align-items:center;justify-content:center;
+    font-family:inherit;font-size:1.65vh;letter-spacing:.15vh;color:#9eff9e;
+    border:1px solid rgba(120,255,150,.32);background:rgba(4,12,6,.6)}
+  .ubtn.press{background:rgba(40,110,55,.65);color:#fff}
+  .ubtn.hot{border-color:#ffd24a;color:#ffd24a}
+  #btnBrake{position:absolute;left:calc(27vh + var(--sl));bottom:calc(4.5vh + var(--sb));width:12vh;height:7vh;
+    border-radius:1vh;font-size:1.8vh;color:#ffd24a;border-color:rgba(255,210,74,.4)}
 </style>
 </head>
 <body>
@@ -62,7 +144,7 @@
   <div class="lbl">MAIN GUN 120mm &nbsp; <span id="roundSel">APFSDS-DT</span></div>
   <div id="ammoRow"><span id="apAmmo">AP ×24</span><span id="heAmmo">HE ×12</span></div>
   <div id="reloadOuter"><div id="reloadBar"></div></div>
-  <div style="margin-top:6px" class="lbl">DRONE <span id="droneBtn" style="color:#9eff9e">[D] DEPLOY UAV</span></div>
+  <div style="margin-top:6px" class="lbl">DRONE <span id="droneBtn" style="color:#9eff9e">STOWED</span></div>
 </div>
 
 <div class="hud panel" id="mapWrap">
@@ -79,8 +161,29 @@
 
 <div class="hud panel" id="bottomBar">
   <div><span id="speedo">0</span> km/h</div>
-  <div class="lbl">ROUND [H]: <span id="roundSel2">APFSDS-DT</span></div>
-  <div class="lbl">CAM [C] · DRONE [D] · BRAKE [SPACE]</div>
+  <div class="lbl">ROUND <span id="roundSel2">APFSDS-DT</span></div>
+</div>
+
+
+<div id="touch">
+  <div id="turretHint"><b>DRAG HERE TO SLEW TURRET</b></div>
+  <div id="stick"><div id="stickKnob"></div></div>
+  <div id="btnBrake" class="ubtn">BRAKE</div>
+  <div id="utilCol">
+    <div class="ubtn" id="btnRound">AP</div>
+    <div class="ubtn" id="btnCam">CAM EXT</div>
+    <div class="ubtn" id="btnUav">UAV</div>
+    <div class="ubtn" id="btnPause">&#10073;&#10073; PAUSE</div>
+  </div>
+  <div id="btnMG" class="tbtn">COAX<br>MG</div>
+  <div id="btnFire" class="tbtn"><div id="fireRing"></div><span>120mm<b id="fireAmmo">AP 24</b></span></div>
+</div>
+
+<div class="overlay" id="pauseScreen" style="display:none">
+  <h1>PAUSED</h1>
+  <h2 id="pauseSub">ENGAGEMENT ON HOLD</h2>
+  <button class="startbtn" id="resumeBtn">RESUME</button>
+  <button class="tankbtn" style="margin-top:2vh" onclick="location.reload()">ABORT &amp; RESTART</button>
 </div>
 
 <div class="overlay" id="startScreen">
@@ -91,13 +194,18 @@
     <button class="tankbtn sel" id="btnAbrams">M1A2 ABRAMS<br><span style="font-size:10px;color:#7fae82">120mm L44 · CROWS MG · HEAT REACTIVE</span></button>
     <button class="tankbtn" id="btnT90">T-90A<br><span style="font-size:10px;color:#7fae82">125mm 2A46M · KORA Active Protection</span></button>
   </div>
-  <table class="keys">
-    <tr><td>W / S</td><td>throttle forward / reverse</td><td>LMB</td><td>fire main gun</td></tr>
-    <tr><td>A / D</td><td>steer</td><td>RMB (hold)</td><td>turret machine gun</td></tr>
-    <tr><td>Mouse / Q·E</td><td>turret aim (left/right) + gun elevation (up/down)</td><td>C</td><td>interior / exterior view</td></tr>
-    <tr><td>↑ / ↓</td><td>elevate main gun</td><td>D</td><td>deploy UAV (tactical feed 10:00)</td></tr>
-    <tr><td>H</td><td>switch round APFSDS / HE</td><td>P</td><td>pause</td></tr>
-  </table>
+  <div id="ctrlMap">
+    <div class="cm">TOP OF SCREEN — DRAG TO SLEW TURRET &amp; ELEVATE GUN<br><span>left / right = azimuth · up / down = elevation</span></div>
+    <div class="cmRow">
+      <div class="cm cmDrive">&#9678; LEFT STICK<br><span>push to drive · tilt to steer</span></div>
+      <div class="cm cmSpacer"></div>
+      <div class="cm cmFire">&#9673; &#9673; RIGHT<br><span>120mm main gun · coax MG</span></div>
+    </div>
+  </div>
+  <div class="setRow"><span class="setLbl">GRAPHICS</span>
+    <button class="sbtn" data-q="low">LOW</button><button class="sbtn" data-q="med">MEDIUM</button><button class="sbtn" data-q="high">HIGH</button></div>
+  <div class="setRow"><span class="setLbl">AIM SENSITIVITY</span>
+    <button class="sbtn" data-s="0.65">LOW</button><button class="sbtn" data-s="1">NORMAL</button><button class="sbtn" data-s="1.5">HIGH</button></div>
   <button class="startbtn" id="startBtn">START BATTLE</button>
 </div>
 
@@ -107,7 +215,7 @@
   <button class="startbtn" onclick="location.reload()">RE-ENGAGE</button>
 </div>
 
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/"}}</script>
+<script type="importmap">{"imports":{"three":"./vendor/three/build/three.module.min.js","three/addons/":"./vendor/three/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
@@ -1140,12 +1248,32 @@ const AudioSys={ctx:null,master:null,engOsc:null,engGain:null,noiseBuf:null,
   },
 };
 
+/* ============================== MOBILE QUALITY / HAPTICS ============================== */
+// Everything below the renderer reads from Q, so the whole scene budget is one switch.
+// The choice is persisted and applied at load — changing it on the start screen reloads the page.
+// Screen-space AO and SMAA are each a full-screen pass at native resolution;
+// on a mid-range phone they are the difference between 60 and 30 fps, so only
+// the high preset pays for them. The light probe is a one-off cost at load and
+// stays on everywhere — it is what stops the armour looking like plastic.
+const QUALITY_PRESETS={
+  low :{pixelRatio:0.70,shadows:true ,softShadows:false,shadowMap:1024,terrainSeg:110,trees:[90 ,80 ],grass:900 ,bloom:false,ao:false,smaa:false,hudInterval:0.14},
+  med :{pixelRatio:0.95,shadows:true ,softShadows:true ,shadowMap:1536,terrainSeg:140,trees:[130,115],grass:2000,bloom:true ,ao:false,smaa:false,hudInterval:0.10},
+  high:{pixelRatio:1.30,shadows:true ,softShadows:true ,shadowMap:2048,terrainSeg:170,trees:[170,150],grass:3800,bloom:true ,ao:true ,smaa:true ,hudInterval:0.08}
+};
+function store(k,d){try{const v=localStorage.getItem(k);return v===null?d:v;}catch(e){return d;}}
+function storeSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+let qualityName=store("tb_quality","med");
+if(!QUALITY_PRESETS[qualityName])qualityName="med";
+const Q=QUALITY_PRESETS[qualityName];
+let aimSens=parseFloat(store("tb_sens","1"))||1;
+function haptic(pattern){try{navigator.vibrate&&navigator.vibrate(pattern);}catch(e){}}
+
 /* ============================== SCENE ============================== */
 const canvas=document.getElementById("gl");
-const renderer=new THREE.WebGLRenderer({canvas,antialias:false});
-renderer.setPixelRatio(Math.min(devicePixelRatio,1.4));   // SMAA handles the edges
+const renderer=new THREE.WebGLRenderer({canvas,antialias:false,powerPreference:"high-performance"});
+renderer.setPixelRatio(Math.min(devicePixelRatio,Q.pixelRatio));
 renderer.setSize(innerWidth,innerHeight);
-renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled=Q.shadows;renderer.shadowMap.type=Q.softShadows?THREE.PCFSoftShadowMap:THREE.PCFShadowMap;
 // outputEncoding was removed in r152 and had been silently doing nothing here.
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 // The grade pass tone-maps at the end of the chain, so the scene stays linear.
@@ -1198,17 +1326,17 @@ void main(){
 }`});
 const sky=new THREE.Mesh(new THREE.SphereGeometry(2400,32,16),skyMat);
 sky.userData.skipAO=true;   // a dome in the AO depth prepass reads as a wall
+sky.frustumCulled=false;scene.add(sky);
 
-// Image-based lighting from the same shader that draws the horizon, so armour
-// reflects the sky it is sitting under. Without a probe the hulls are lit only
-// by sun and hemisphere and read as flat paint.
+// Image-based lighting from the same shader that draws the horizon. One PMREM
+// bake at load, then free for the rest of the session — cheap enough for a
+// phone and the single biggest step away from flat paint.
 scene.environment=PR.skyEnvironment(renderer,{
   skyMaterial:skyMat.clone(),
-  groundColor:0x6a5f47,       // dry scrub and dust
+  groundColor:0x6a5f47,
   horizonFade:0.30,
 });
 if('environmentIntensity' in scene) scene.environmentIntensity=1.0;
-sky.frustumCulled=false;scene.add(sky);
 
 const camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,0.1,3000);
 camera.position.set(0,8,20);
@@ -1216,14 +1344,14 @@ camera.position.set(0,8,20);
 const hemi=new THREE.HemisphereLight(0xcfe4ff,0x5a5240,0.22);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xfff2d8,1.35);
 sun.position.set(-320,420,-180);sun.castShadow=true;
-sun.shadow.mapSize.set(2048,2048);
+sun.shadow.mapSize.set(Q.shadowMap,Q.shadowMap);
 sun.shadow.camera.left=-130;sun.shadow.camera.right=130;
 sun.shadow.camera.top=130;sun.shadow.camera.bottom=-130;
 sun.shadow.camera.far=900;sun.shadow.bias=-0.0006;
 scene.add(sun);scene.add(sun.target);
 
 /* ---------- terrain ---------- */
-const TERR=2400,SEG=170;
+const TERR=2400,SEG=Q.terrainSeg;
 function groundTex(){ // tiling dirt/grass micro-detail
   const c=document.createElement("canvas");c.width=c.height=256;const g=c.getContext("2d");
   g.fillStyle="#8a8f74";g.fillRect(0,0,256,256);
@@ -1262,7 +1390,7 @@ const GROUND_TEX=groundTex();
   geo.computeVertexNormals();
   // A bump map derived from the albedo cannot describe a slope it has no
   // luminance cue for; a proper tangent-space normal map can.
-  const groundDetail=PR.roughSurface({size:512,color:'#8a7f66',grit:0.5,crack:0.2,stain:0.3,roughBase:0.95,seed:17,repeat:200});
+  const groundDetail=PR.roughSurface({size:Q.pixelRatio<1?256:512,color:'#8a7f66',grit:0.5,crack:0.2,stain:0.3,roughBase:0.95,seed:17,repeat:200});
   const mat=new THREE.MeshStandardMaterial({
     vertexColors:true,roughness:1,metalness:0,map:GROUND_TEX,
     normalMap:groundDetail.normalMap,normalScale:new THREE.Vector2(0.14,0.14),
@@ -1295,7 +1423,7 @@ const SOFT_TEX=smokeTex();
   const dTrunkG=new THREE.CylinderGeometry(0.3,0.5,4.2,6);dTrunkG.translate(0,2.1,0);
   const dCanG=new THREE.IcosahedronGeometry(2.7,1);dCanG.scale(1,.82,1);dCanG.translate(0,5.6,0);
   const dCan2G=new THREE.IcosahedronGeometry(1.7,1);dCan2G.scale(1,.8,1);dCan2G.translate(1.1,6.9,0.6);
-  const NC=170,ND=150;
+  const NC=Q.trees[0],ND=Q.trees[1];
   const cParts=[cTrunkG,cC1G,cC2G,cC3G].map(gg=>mkInst(gg,NC));
   const dParts=[dTrunkG,dCanG,dCan2G].map(gg=>mkInst(gg,ND));
   let pc=0,pd=0,tries=0;
@@ -1401,7 +1529,7 @@ const SOFT_TEX=smokeTex();
     sh.uniforms.uTime=timeU;
     sh.vertexShader="uniform float uTime;\n"+sh.vertexShader.replace("#include <begin_vertex>","#include <begin_vertex>\n      {\n       float wt=clamp(transformed.y/"+hh.toFixed(1)+",0.,1.);wt*=wt;\n       float ph=instanceMatrix[3][0]*.43+instanceMatrix[3][2]*.37;\n       transformed.x+=sin(uTime*2.1+ph)*.18*wt;\n       transformed.z+=cos(uTime*1.6+ph*1.3)*.08*wt;\n      }");
   };
-  const N=3800;
+  const N=Q.grass;
   const grass=new THREE.InstancedMesh(geo,mat,N);
   const m=new THREE.Matrix4(),q=new THREE.Quaternion(),sv=new THREE.Vector3(),pv=new THREE.Vector3();
   const cA=new THREE.Color(0x5d7a33),cB=new THREE.Color(0x9a9448),cc=new THREE.Color();
@@ -1445,17 +1573,18 @@ const SOFT_TEX=smokeTex();
 })();
 
 /* ---------- post-processing: bloom + gamma + FXAA ---------- */
-// The old chain ran bloom on an 8-bit target with tone mapping already baked
-// into the materials, so nothing was ever above threshold and the "HDR" bloom
-// was picking out mid-greys. This one is half-float end to end.
+// The grade pass is never optional — it is what tone-maps the frame — but the
+// passes either side of it are, and on the low preset the chain is a render
+// plus one full-screen quad.
 let composer=null,pipe=null;
 try{
   pipe=PR.buildPipeline(renderer,scene,camera,
     {EffectComposer,RenderPass,ShaderPass,UnrealBloomPass,SMAAPass},
     {
       exposure:0.92,
-      bloomThreshold:1.05,bloomStrength:0.45,bloomRadius:0.75,
-      ao:true,aoRadius:1.1,aoIntensity:0.85,aoSamples:14,aoPower:1.15,
+      bloom:Q.bloom,bloomThreshold:1.05,bloomStrength:0.45,bloomRadius:0.75,
+      ao:Q.ao,aoRadius:1.1,aoIntensity:0.85,aoSamples:12,aoPower:1.15,aoScale:0.5,
+      smaa:Q.smaa,
       grade:{
         contrast:1.10,saturation:0.97,vignette:0.30,
         grain:0.032,aberration:0.0018,sharpen:0.38,
@@ -1469,7 +1598,6 @@ try{
   renderer.toneMapping=THREE.ACESFilmicToneMapping;   // the grade pass did this
   renderer.toneMappingExposure=1.05;
 }
-
 
 /* ---------- explosion / crater decals list ---------- */
 const craters=[];
@@ -1510,9 +1638,7 @@ function buildTankModel(type){ // type: 'abrams' | 't90'
   const isAbrams=type==="abrams";
   if(!_texCache[type])_texCache[type]={hull:wornTex(isAbrams?"#a89a6e":"#5f6b5c"),tread:treadTex()};
   // Panel seams, rivets and rain streaking over the existing camouflage bake.
-  // Metalness rides the generated map so the paint stays dielectric and only
-  // worn-through scratches behave like bare steel.
-  const wearMaps=PR.metalPanels({size:512,color:'#ffffff',panel:4,wear:0.55,streak:0.7,seed:type==="abrams"?211:223});
+  const wearMaps=PR.metalPanels({size:Q.pixelRatio<1?256:512,color:'#ffffff',panel:4,wear:0.55,streak:0.7,seed:type==="abrams"?211:223});
   const hullMat=new THREE.MeshStandardMaterial({
     color:0xffffff,map:_texCache[type].hull,
     normalMap:wearMaps.normalMap,roughnessMap:wearMaps.roughnessMap,metalnessMap:wearMaps.metalnessMap,
@@ -1692,6 +1818,7 @@ class Tank{
     flashLight(m,this.isPlayer?0.5:2.6,0xffcf8a);
     puff(m,d.clone().multiplyScalar(8),0xffe9c2,rand(.7,1.1),1.3,0.07,0,0.55); // muzzle flash (bloom) — dim on own shots
     spawnMuzzleSmoke(m,d);
+    if(this.isPlayer)haptic(35); // main-gun kick
     return true;
   }
   fireMG(dt){
@@ -1707,7 +1834,7 @@ class Tank{
   damage(n,from){
     if(!this.alive)return;
     this.hp-=n;this.hitFlash=1;
-    if(this.isPlayer)hudDamageFlash();
+    if(this.isPlayer){hudDamageFlash();haptic(70);}
     if(this.hp<=0)this.die(from);
   }
   die(by){
@@ -2132,6 +2259,134 @@ addEventListener("mousemove",e=>{ // mouse steers turret yaw (sides) and gun ele
 });
 canvas.addEventListener("contextmenu",e=>e.preventDefault());
 
+/* ============================== TOUCH CONTROLS ==============================
+   Screen zones (landscape):
+     top 44%            -> turret pad: drag to slew azimuth / elevate the gun
+     bottom-left 45%    -> floating drive stick: push to throttle, tilt to steer
+     bottom-right       -> 120mm main gun + coax MG buttons, utility pills
+   Multi-touch is tracked per pointerId, so driving, aiming and firing can all
+   happen at once. Buttons stopPropagation so they never start a pad drag.     */
+const touchEl=document.getElementById("touch");
+const stickEl=document.getElementById("stick"),knobEl=document.getElementById("stickKnob");
+const tState={drive:{x:0,y:0},yawDelta:0,elevDelta:0};
+const tPointers=new Map();
+let touchBrake=false,engineThrottle=0,hudTickT=0,stickR=80,hintFaded=false;
+
+function layoutTouch(){
+  stickR=innerHeight*0.11;                                   // #stick is 22vh across
+  document.documentElement.style.setProperty("--hs",String(clamp(innerHeight/860,0.58,1)));
+}
+layoutTouch();
+
+function inDriveZone(x,y){return x<innerWidth*0.45&&y>innerHeight*0.44;}
+function placeStick(x,y){                                    // floating base, clamped on-screen
+  const cx=clamp(x,stickR+2,innerWidth-stickR-2),cy=clamp(y,stickR+2,innerHeight-stickR-2);
+  stickEl.style.left=(cx-stickR)+"px";stickEl.style.top=(cy-stickR)+"px";stickEl.style.bottom="auto";
+  stickEl.classList.add("live");
+  return {x:cx,y:cy};
+}
+function resetStick(){
+  knobEl.style.transform="";stickEl.classList.remove("live");
+  stickEl.style.left=stickEl.style.top=stickEl.style.bottom="";
+  tState.drive.x=tState.drive.y=0;
+}
+function updateStick(cx,cy,x,y){
+  let dx=x-cx,dy=y-cy;
+  const d=Math.hypot(dx,dy);
+  if(d>stickR){dx=dx/d*stickR;dy=dy/d*stickR;}
+  knobEl.style.transform="translate("+dx.toFixed(1)+"px,"+dy.toFixed(1)+"px)";
+  const nx=dx/stickR,ny=dy/stickR,mag=Math.hypot(nx,ny),dz=0.14;
+  const k=mag>dz?(mag-dz)/(1-dz)/mag:0;                      // radial dead zone
+  tState.drive.x=nx*k;tState.drive.y=ny*k;
+}
+function fadeHint(){
+  if(hintFaded)return;hintFaded=true;
+  const h=document.getElementById("turretHint");if(h)h.style.opacity="0";
+}
+touchEl.addEventListener("pointerdown",e=>{
+  if(e.target!==touchEl)return;                              // a button will handle its own press
+  e.preventDefault();
+  if(paused||gameOver)return;
+  touchEl.setPointerCapture(e.pointerId);
+  const x=e.clientX,y=e.clientY;
+  if(inDriveZone(x,y)){
+    for(const p of tPointers.values())if(p.kind==="drive")return;   // one stick at a time
+    const c=placeStick(x,y);
+    tPointers.set(e.pointerId,{kind:"drive",cx:c.x,cy:c.y});
+    updateStick(c.x,c.y,x,y);
+  }else{
+    tPointers.set(e.pointerId,{kind:"turret",lx:x,ly:y});
+    fadeHint();
+  }
+});
+touchEl.addEventListener("pointermove",e=>{
+  const p=tPointers.get(e.pointerId);if(!p)return;
+  e.preventDefault();
+  if(p.kind==="drive"){updateStick(p.cx,p.cy,e.clientX,e.clientY);}
+  else if(!paused&&!gameOver){
+    tState.yawDelta+=e.clientX-p.lx;tState.elevDelta+=e.clientY-p.ly;
+    p.lx=e.clientX;p.ly=e.clientY;
+  }else{p.lx=e.clientX;p.ly=e.clientY;}
+});
+function endTouch(e){
+  const p=tPointers.get(e.pointerId);if(!p)return;
+  tPointers.delete(e.pointerId);
+  if(p.kind==="drive")resetStick();
+}
+touchEl.addEventListener("pointerup",endTouch);
+touchEl.addEventListener("pointercancel",endTouch);
+
+function holdBtn(el,onDown,onUp){
+  el.addEventListener("pointerdown",e=>{
+    e.stopPropagation();e.preventDefault();
+    if(paused||gameOver)return;
+    try{el.setPointerCapture(e.pointerId);}catch(err){}
+    el.classList.add("press");onDown&&onDown();
+  });
+  const up=e=>{
+    e.stopPropagation();
+    if(!el.classList.contains("press"))return;
+    el.classList.remove("press");onUp&&onUp();
+  };
+  el.addEventListener("pointerup",up);
+  el.addEventListener("pointercancel",up);
+}
+function tapBtn(el,fn){holdBtn(el,()=>{haptic(12);fn();},null);}
+
+holdBtn(document.getElementById("btnFire"),()=>keys["MouseMain"]=true,()=>keys["MouseMain"]=false);
+holdBtn(document.getElementById("btnMG"),()=>keys["MouseMG"]=true,()=>keys["MouseMG"]=false);
+holdBtn(document.getElementById("btnBrake"),()=>touchBrake=true,()=>touchBrake=false);
+tapBtn(document.getElementById("btnRound"),()=>{if(playerTank)playerTank.round=playerTank.round==="ap"?"he":"ap";});
+tapBtn(document.getElementById("btnCam"),()=>{camMode=camMode==="exterior"?"interior":"exterior";updateCamUI();});
+tapBtn(document.getElementById("btnUav"),()=>droneDeploy());
+document.getElementById("btnPause").addEventListener("pointerdown",e=>{
+  e.stopPropagation();e.preventDefault();haptic(12);setPaused(!paused);
+});
+
+function releaseHeld(){
+  keys["MouseMain"]=keys["MouseMG"]=false;touchBrake=false;
+  tState.yawDelta=tState.elevDelta=0;
+  tPointers.clear();resetStick();
+  document.querySelectorAll(".press").forEach(el=>el.classList.remove("press"));
+}
+function setPaused(v){
+  if(!started||gameOver)return;
+  paused=v;
+  document.getElementById("pauseScreen").style.display=v?"flex":"none";
+  if(v)releaseHeld();                                        // an overlay would swallow the pointerup
+}
+document.getElementById("resumeBtn").onclick=()=>setPaused(false);
+document.addEventListener("visibilitychange",()=>{if(document.hidden)setPaused(true);});
+// Android hardware/gesture back: pause instead of leaving the battle (MainActivity reads the return value)
+window.__androidBack=function(){
+  if(!started||gameOver)return false;
+  setPaused(!paused);
+  return true;
+};
+addEventListener("contextmenu",e=>e.preventDefault());
+addEventListener("gesturestart",e=>e.preventDefault());
+
+
 const compassC=document.getElementById("compass"),compCtx=compassC.getContext("2d");
 function bearingDeg(h){return (540-(h*180/Math.PI)+720)%360;}
 function drawCompass(){
@@ -2169,7 +2424,22 @@ document.getElementById("startBtn").onclick=()=>{
   AudioSys.init();AudioSys.ctx.resume&&AudioSys.ctx.resume();
   document.getElementById("startScreen").style.display="none";
   spawnBattle(selType);started=true;updateCamUI();
+  touchEl.classList.add("on");layoutTouch();haptic(20);
+  setTimeout(fadeHint,9000);
 };
+(function initSettings(){
+  document.querySelectorAll(".sbtn[data-q]").forEach(b=>{
+    b.classList.toggle("sel",b.dataset.q===qualityName);
+    b.onclick=()=>{if(b.dataset.q===qualityName)return;storeSet("tb_quality",b.dataset.q);location.reload();};
+  });
+  document.querySelectorAll(".sbtn[data-s]").forEach(b=>{
+    b.classList.toggle("sel",Math.abs(parseFloat(b.dataset.s)-aimSens)<0.01);
+    b.onclick=()=>{
+      aimSens=parseFloat(b.dataset.s);storeSet("tb_sens",b.dataset.s);
+      document.querySelectorAll(".sbtn[data-s]").forEach(o=>o.classList.toggle("sel",o===b));
+    };
+  });
+})();
 
 function update(dt){
   dtGlobal=dt;
@@ -2178,11 +2448,17 @@ function update(dt){
   if(p.alive&&!paused){
     let th=0,st=0;
     if(keys["KeyW"])th=13;if(keys["KeyS"])th=-7; // target speed m/s (~47 / 25 km/h)
-    if(keys["Space"])th=0,p.speed*=Math.pow(0.02,dt); // brake
-    if(keys["KeyA"])st+=1;if(keys["KeyD"])st-=1;
+    // left stick: push up = forward, pull down = reverse, tilt = steer (analog)
+    if(tState.drive.y<0)th=13*Math.min(1,-tState.drive.y);
+    else if(tState.drive.y>0)th=-7*Math.min(1,tState.drive.y);
+    st+=(keys["KeyA"]?1:0)-(keys["KeyD"]?1:0)-tState.drive.x;
+    if(keys["Space"]||touchBrake){th=0;p.speed*=Math.pow(0.02,dt);} // brake
     p.applyThrottle(th,st,dt);
-    p.turretYaw=clamp(p.turretYaw+(keys["KeyQ"]?1:0-(keys["KeyE"]?1:0))*0*dt+ (keys["KeyQ"]?0.45*dt:0)-(keys["KeyE"]?0.45*dt:0),-2.3,2.3);
-    p.elev=clamp(p.elev+(keys["ArrowUp"]?0.16*dt:0)-(keys["ArrowDown"]?0.16*dt:0),-0.18,0.5);
+    engineThrottle=th>0.2?1:th<-0.2?-0.7:0;
+    // turret pad drag (top of screen), with the keyboard slew still available
+    p.turretYaw=clamp(p.turretYaw-tState.yawDelta*0.0030*aimSens+(keys["KeyQ"]?0.45*dt:0)-(keys["KeyE"]?0.45*dt:0),-2.3,2.3);
+    p.elev=clamp(p.elev-tState.elevDelta*0.0020*aimSens+(keys["ArrowUp"]?0.16*dt:0)-(keys["ArrowDown"]?0.16*dt:0),-0.18,0.5);
+    tState.yawDelta=0;tState.elevDelta=0;
     if(keys["MouseMain"])p.fireMain();
     if(keys["MouseMG"])p.fireMG(dt);
   }
@@ -2226,7 +2502,7 @@ function update(dt){
   if(drone.state==="stowed")ds.textContent=drone.cooldown>0?("RELAUNCH IN "+Math.ceil(drone.cooldown)+"s"):"UAV STOWED — ENDURANCE 10:00";
   else if(drone.state==="flying"){const m=Math.floor(drone.endurance/60),s=Math.floor(drone.endurance%60);ds.textContent="FEED LIVE — T-"+m+":"+String(s).padStart(2,"0");}
   else ds.textContent=drone.state;
-  document.getElementById("droneBtn").textContent=drone.state==="stowed"?"[D] DEPLOY UAV":"[UAV ACTIVE]";
+  document.getElementById("droneBtn").textContent=drone.state==="stowed"?"STOWED — TAP UAV":"ACTIVE";
   // --- camera ---
   const f=p.fwd,up=new THREE.Vector3(0,1,0);
   if(camMode==="exterior"){
@@ -2250,7 +2526,7 @@ function update(dt){
   // sun follows player for shadows
   sun.position.set(p.pos.x-320,p.pos.y+420,p.pos.z-180);sun.target.position.copy(p.pos);
   // audio engine
-  if(started)AudioSys.engine(p.speed,keys["KeyW"]?1:keys["KeyS"]?-0.7:0);
+  if(started)AudioSys.engine(p.speed,engineThrottle);
   // win/lose
   if(!gameOver){
     const enemies=tanks.filter(t=>t.team===1);
@@ -2260,6 +2536,7 @@ function update(dt){
 }
 function endGame(win){
   gameOver=true;
+  releaseHeld();touchEl.classList.remove("on");
   document.getElementById("endScreen").style.display="flex";
   const t=document.getElementById("endTitle");
   t.textContent=win?"VICTORY":"MISSION FAILED";
@@ -2281,6 +2558,16 @@ function refreshHUD(dt){
   const rname=p.round==="ap"?"APFSDS-DT":"HE-THERMOBARIC";
   document.getElementById("roundSel").textContent=rname;document.getElementById("roundSel2").textContent=rname;
   document.getElementById("speedo").textContent=Math.round(Math.abs(p.speed)*3.6);
+  // touch button state: reload ring on the fire button, selected round, camera, UAV
+  document.getElementById("btnFire").classList.toggle("rl",p.reloadT>0);
+  document.getElementById("fireRing").style.background=p.reloadT>0
+    ? "conic-gradient(rgba(255,160,90,.30) "+(rl*360).toFixed(0)+"deg, rgba(0,0,0,0) 0deg)" : "none";
+  document.getElementById("fireAmmo").textContent=p.round==="ap"?("AP "+p.ammo.ap):("HE "+p.ammo.he);
+  const rbtn=document.getElementById("btnRound");
+  rbtn.textContent=p.round==="ap"?"AP \u25b8 HE":"HE \u25b8 AP";
+  rbtn.classList.toggle("hot",p.round==="he");
+  document.getElementById("btnCam").textContent=camMode==="interior"?"CAM SIGHT":"CAM EXT";
+  document.getElementById("btnUav").classList.toggle("hot",drone.state==="flying");
   // commander sight readouts (interior view)
   if(camMode==="interior"&&p.alive){
     const az=((p.barrelYaw*180/Math.PI)%360+360)%360;
@@ -2306,17 +2593,21 @@ function frame(now){
   timeU.value=now/1000;
   sky.position.copy(camera.position); // keep dome centered on viewer
   update(dt);refreshHUD(Math.min(dt,0.2));
-  drawCompass();drawTacMap(now/1000);
+  hudTickT-=dt;
+  if(hudTickT<=0){hudTickT=Q.hudInterval;drawCompass();drawTacMap(now/1000);}
   if(pipe){pipe.update(now/1000);pipe.composer.render();}
   else renderer.render(scene,camera);
 }
 requestAnimationFrame(frame);
 
-addEventListener("resize",()=>{
+function onViewportChange(){
   camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
   renderer.setSize(innerWidth,innerHeight);
   if(pipe)pipe.setSize(innerWidth,innerHeight);
-});
+  layoutTouch();resetStick();tPointers.clear();
+}
+addEventListener("resize",onViewportChange);
+addEventListener("orientationchange",()=>setTimeout(onViewportChange,120));
 </script>
 </body>
 </html>

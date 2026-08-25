@@ -13,8 +13,8 @@ generated on a canvas at load so the games stay self-contained.
 Each game keeps its own copy so a folder is standalone. Edit `shared/photoreal.js`, then run:
 
 ```bash
-node tools/sync-photoreal.mjs          # propagate to every game
-node tools/sync-photoreal.mjs --check  # fail if any copy is stale
+node tools/sync-shared.mjs          # propagate to every game
+node tools/sync-shared.mjs --check  # fail if any copy is stale
 ```
 
 `shared/bench.html` is a material bench for the kit — serve the repo over HTTP and open it to see
