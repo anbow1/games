@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "SteelThunder"
+rootProject.name = "CombatArcade"
 include(":app")

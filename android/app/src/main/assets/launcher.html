@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#06090c">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Combat Arcade</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{width:100%;height:100%;overflow:hidden;background:#06090c;color:#dfe8ef;
+    font-family:"Consolas","Roboto Mono",monospace;
+    -webkit-user-select:none;user-select:none;touch-action:manipulation}
+  /* A slow drifting wash rather than a static gradient — a launcher that never
+     moves reads as a broken page on a phone. */
+  body::before{content:"";position:fixed;inset:-20%;z-index:0;
+    background:radial-gradient(ellipse at 25% 15%,rgba(40,110,90,.20),transparent 55%),
+               radial-gradient(ellipse at 80% 80%,rgba(50,90,160,.18),transparent 55%);
+    animation:drift 26s ease-in-out infinite alternate}
+  @keyframes drift{from{transform:translate3d(-2%,-1%,0) scale(1)}to{transform:translate3d(2%,2%,0) scale(1.08)}}
+
+  main{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;
+    padding:calc(2vh + env(safe-area-inset-top,0px)) calc(3vh + env(safe-area-inset-right,0px))
+            calc(2vh + env(safe-area-inset-bottom,0px)) calc(3vh + env(safe-area-inset-left,0px))}
+  header{text-align:center;margin-bottom:1.6vh;flex:0 0 auto}
+  h1{font-size:4.2vh;letter-spacing:1.1vh;font-weight:700;color:#eaf4ff;
+    text-shadow:0 0 3vh rgba(120,200,255,.35)}
+  .tag{font-size:1.5vh;letter-spacing:.5vh;color:#7e93a3;margin-top:.5vh}
+
+  .grid{flex:1 1 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:2vh;min-height:0}
+  /* Portrait is not the play orientation, but the launcher still has to be
+     usable if the phone is held upright while browsing. */
+  @media (orientation:portrait){ .grid{grid-template-columns:1fr;grid-auto-rows:1fr} h1{font-size:3.4vh} }
+
+  a.card{position:relative;display:flex;flex-direction:column;justify-content:flex-end;
+    padding:2vh;border-radius:1.4vh;overflow:hidden;text-decoration:none;color:inherit;
+    border:1px solid rgba(150,190,215,.22);background:rgba(10,18,24,.72);
+    box-shadow:0 1vh 3vh rgba(0,0,0,.45), inset 0 0 6vh rgba(255,255,255,.03);
+    transition:transform .12s ease, border-color .12s ease, box-shadow .12s ease}
+  a.card:active{transform:scale(.975);border-color:rgba(190,235,255,.55);
+    box-shadow:0 .4vh 1.4vh rgba(0,0,0,.5), inset 0 0 7vh rgba(255,255,255,.06)}
+  a.card svg{position:absolute;top:8%;left:50%;transform:translateX(-50%);
+    width:56%;height:44%;opacity:.9}
+  .name{font-size:2.5vh;letter-spacing:.35vh;font-weight:700}
+  .sub{font-size:1.4vh;letter-spacing:.2vh;color:#8fa3b3;margin-top:.5vh;line-height:1.45}
+  .ctl{font-size:1.25vh;letter-spacing:.15vh;color:#63798a;margin-top:1vh;
+    border-top:1px solid rgba(150,190,215,.16);padding-top:.9vh}
+
+  .tank .name{color:#9dff9e}  .tank{border-color:rgba(120,255,150,.22)}
+  .jet  .name{color:#8fd2ff}  .jet {border-color:rgba(120,200,255,.22)}
+  .fps  .name{color:#7fffd4}  .fps {border-color:rgba(127,255,212,.22)}
+
+  footer{flex:0 0 auto;text-align:center;font-size:1.25vh;letter-spacing:.25vh;
+    color:#54677a;margin-top:1.4vh}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>COMBAT ARCADE</h1>
+    <div class="tag">THREE GAMES &middot; NO NETWORK REQUIRED</div>
+  </header>
+
+  <div class="grid">
+    <a class="card tank" href="./tank/index.html">
+      <svg viewBox="0 0 100 52" aria-hidden="true">
+        <rect x="14" y="30" width="58" height="10" fill="#7cfc66"/>
+        <rect x="11" y="40" width="64" height="7" fill="#4e9e42"/>
+        <g fill="#0d1a10">
+          <rect x="18" y="41" width="7" height="5"/><rect x="30" y="41" width="7" height="5"/>
+          <rect x="42" y="41" width="7" height="5"/><rect x="54" y="41" width="7" height="5"/>
+          <rect x="66" y="41" width="6" height="5"/>
+        </g>
+        <path d="M30 16 L60 16 L66 30 L24 30 Z" fill="#9eff9e"/>
+        <rect x="58" y="20" width="36" height="5" fill="#9eff9e"/>
+        <rect x="88" y="18" width="7" height="9" fill="#ffd24a"/>
+        <rect x="38" y="9" width="11" height="7" fill="#9eff9e"/>
+      </svg>
+      <div class="name">STEEL THUNDER</div>
+      <div class="sub">M1 Abrams vs T-90. Ballistics, procedural terrain, UAV recon.</div>
+      <div class="ctl">STICK DRIVES &middot; TOP OF SCREEN SLEWS THE TURRET</div>
+    </a>
+
+    <a class="card jet" href="./falcon/index.html">
+      <svg viewBox="0 0 100 52" aria-hidden="true">
+        <path d="M50 4 L57 26 L92 36 L57 34 L54 46 L46 46 L43 34 L8 36 L43 26 Z" fill="#8fd2ff"/>
+        <path d="M50 4 L53 20 L47 20 Z" fill="#dff2ff"/>
+        <circle cx="50" cy="27" r="3.4" fill="#0b1a26"/>
+        <rect x="40" y="44" width="20" height="4" rx="2" fill="#ffb066"/>
+      </svg>
+      <div class="name">FALCON STRIKE</div>
+      <div class="sub">Fighter combat over the Western Range. Guns, IR, radar, rockets.</div>
+      <div class="ctl">STICK FLIES &middot; A/B THROTTLE &middot; RIGHT THUMB SHOOTS</div>
+    </a>
+
+    <a class="card fps" href="./city/index.html">
+      <svg viewBox="0 0 100 52" aria-hidden="true">
+        <g fill="#2e4a44">
+          <rect x="6" y="14" width="18" height="38"/><rect x="30" y="6" width="16" height="46"/>
+          <rect x="52" y="18" width="18" height="34"/><rect x="76" y="10" width="18" height="42"/>
+        </g>
+        <g fill="#ffe9a8">
+          <rect x="10" y="20" width="4" height="5"/><rect x="17" y="20" width="4" height="5"/>
+          <rect x="34" y="12" width="4" height="5"/><rect x="41" y="26" width="4" height="5"/>
+          <rect x="56" y="24" width="4" height="5"/><rect x="63" y="36" width="4" height="5"/>
+          <rect x="80" y="16" width="4" height="5"/><rect x="87" y="30" width="4" height="5"/>
+        </g>
+        <g fill="#7fffd4">
+          <rect x="48" y="30" width="2" height="14"/><rect x="42" y="36" width="14" height="2"/>
+        </g>
+      </svg>
+      <div class="name">CITY STORM</div>
+      <div class="sub">Urban first-person defence. Waves of infantry, rifle and shotgun.</div>
+      <div class="ctl">LEFT STICK MOVES &middot; RIGHT SIDE LOOKS &middot; TWO TRIGGERS</div>
+    </a>
+  </div>
+
+  <footer>HOLD THE PHONE IN LANDSCAPE &middot; BACK RETURNS HERE</footer>
+</main>
+
+<script>
+  // The launcher is the only page without an __androidBack hook; MainActivity
+  // reads its absence as "this is the top of the stack" and treats back as exit.
+  // Prefetch nothing: each game is a heavy page and the user picks exactly one.
+  document.addEventListener('contextmenu', (e) => e.preventDefault());
+</script>
+</body>
+</html>

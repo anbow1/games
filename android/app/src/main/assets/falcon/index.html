@@ -101,7 +101,7 @@
       <button class="sbtn" data-q="low">LOW</button><button class="sbtn" data-q="med">MEDIUM</button><button class="sbtn" data-q="high">HIGH</button></div>
     <div class="setRow"><span class="setLbl">PITCH</span>
       <button class="sbtn" data-inv="0">NORMAL</button><button class="sbtn" data-inv="1">INVERTED</button></div>
-    <div class="hint" style="margin-top:1.2vh">TAP ANYWHERE TO LAUNCH</div>
+    <div style="text-align:center;margin-top:1.6vh"><button class="sbtn" id="fsLaunch" style="font-size:2.6vh;padding:1.4vh 6vh;border-color:#7fd4ff;color:#04121e;background:#7fd4ff;letter-spacing:.5vh">LAUNCH</button></div>
   </div>
 </div>
 
@@ -2369,6 +2369,8 @@ function endGame(title){
       document.querySelectorAll('.sbtn[data-inv]').forEach(o=>o.classList.toggle('sel', o===b)); });
   });
 })();
+document.getElementById('fsLaunch').addEventListener('pointerdown', e=>{ e.stopPropagation(); if(state==='menu') startGame(); });
+// Tapping the backdrop still launches; only the settings controls swallow it.
 startScreen.addEventListener('pointerdown', ()=>{ if(state==='menu') startGame(); });
 
 /* ==================================================================

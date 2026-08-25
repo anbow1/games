@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.anbow.steelthunder"
+    namespace = "com.anbow.combatarcade"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.anbow.steelthunder"
+        applicationId = "com.anbow.combatarcade"
         minSdk = 24
         targetSdk = 35
         versionCode = 1

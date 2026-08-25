@@ -5,33 +5,15 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-
-    <!-- hull -->
-    <path
-        android:fillColor="#7CFC66"
-        android:pathData="M26,62 L82,62 L82,72 L26,72 Z" />
-    <!-- track skirts -->
-    <path
-        android:fillColor="#4E9E42"
-        android:pathData="M24,72 L84,72 L84,78 L24,78 Z" />
-    <!-- road wheels -->
-    <path
-        android:fillColor="#0D1A10"
-        android:pathData="M30,73 h6 v4 h-6 z M40,73 h6 v4 h-6 z M50,73 h6 v4 h-6 z M60,73 h6 v4 h-6 z M70,73 h6 v4 h-6 z" />
-    <!-- turret -->
-    <path
-        android:fillColor="#9EFF9E"
-        android:pathData="M40,50 L68,50 L72,62 L36,62 Z" />
-    <!-- 120 mm gun -->
-    <path
-        android:fillColor="#9EFF9E"
-        android:pathData="M66,53 L94,53 L94,57 L66,57 Z" />
-    <!-- muzzle brake -->
-    <path
-        android:fillColor="#FFD24A"
-        android:pathData="M88,51 L94,51 L94,59 L88,59 Z" />
-    <!-- commander's cupola -->
-    <path
-        android:fillColor="#9EFF9E"
-        android:pathData="M46,44 L56,44 L56,50 L46,50 Z" />
+    <!-- reticle ring, broken at the cardinals -->
+    <path android:strokeColor="#7FFFD4" android:strokeWidth="4.6" android:fillColor="#00000000"
+        android:pathData="M54,17 A37,37 0 0 1 91,54 M91,54 A37,37 0 0 1 54,91 M54,91 A37,37 0 0 1 17,54 M17,54 A37,37 0 0 1 54,17"
+        android:strokeLineCap="butt" />
+    <!-- cross hairs, broken at the centre -->
+    <path android:fillColor="#7FFFD4" android:pathData="M51.7,22 h4.6 v20 h-4.6 z" />
+    <path android:fillColor="#7FFFD4" android:pathData="M51.7,66 h4.6 v20 h-4.6 z" />
+    <path android:fillColor="#7FFFD4" android:pathData="M22,51.7 h20 v4.6 h-20 z" />
+    <path android:fillColor="#7FFFD4" android:pathData="M66,51.7 h20 v4.6 h-20 z" />
+    <!-- centre pip -->
+    <path android:fillColor="#FFD24A" android:pathData="M54,50 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
 </vector>

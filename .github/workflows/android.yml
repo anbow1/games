@@ -6,7 +6,9 @@ on:
       - main
       - claude/android-tank-game-touch-vhmbpl
     paths:
-      - "tank-battle-android/**"
+      - "android/**"
+      - "shared/**"
+      - "tools/**"
       - ".github/workflows/android.yml"
   workflow_dispatch:
 
@@ -24,10 +26,16 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: tank-battle-android
+        working-directory: android
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Shared kits are in sync
+        working-directory: .
+        # The kits are inlined into the single-file games; a stale copy is a
+        # silent divergence that only shows up as a graphics bug on the device.
+        run: node tools/sync-shared.mjs --check
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -45,13 +53,13 @@ jobs:
         run: ./gradlew --no-daemon --stacktrace assembleDebug
 
       - name: Name the APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk steel-thunder.apk
+        run: cp app/build/outputs/apk/debug/app-debug.apk combat-arcade.apk
 
       - name: Upload as workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: steel-thunder-apk
-          path: tank-battle-android/steel-thunder.apk
+          name: combat-arcade-apk
+          path: android/combat-arcade.apk
           if-no-files-found: error
 
       # A rolling pre-release gives the phone a stable, tap-to-download URL.
@@ -60,10 +68,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete android-latest --cleanup-tag --yes || true
-          gh release create android-latest steel-thunder.apk \
-            --title "Steel Thunder — latest Android build" \
+          gh release create android-latest combat-arcade.apk \
+            --title "Combat Arcade — latest Android build" \
             --prerelease \
             --notes "Debug-signed APK, built from \`${GITHUB_SHA::7}\`.
+
+          Three games in one app: Steel Thunder (tanks), Falcon Strike (jets), City Storm (FPS).
 
           Install: download on the phone, allow *Install unknown apps* for your browser, open the file.
           Landscape only. No network permission — everything runs offline."

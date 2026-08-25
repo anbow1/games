@@ -1,4 +1,4 @@
-package com.anbow.steelthunder
+package com.anbow.combatarcade
 
 import android.annotation.SuppressLint
 import android.content.pm.ApplicationInfo
@@ -21,11 +21,11 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.webkit.WebViewAssetLoader
 
 /**
- * Steel Thunder — the tank battle runs as a WebGL page bundled in `assets/game/`.
+ * Combat Arcade — three WebGL games bundled in `assets/`, picked from a launcher page.
  *
- * The page is served over https://appassets.androidplatform.net/ rather than file://:
- * ES modules and import maps (which the game uses to load its bundled copy of Three.js)
- * are rejected by CORS on an opaque file:// origin. WebViewAssetLoader answers those
+ * Everything is served over https://appassets.androidplatform.net/ rather than file://:
+ * the games load Three.js as ES modules through an import map, and module scripts are
+ * rejected by CORS on an opaque file:// origin. WebViewAssetLoader answers those
  * requests straight out of the APK, so nothing ever touches the network — the app holds
  * no INTERNET permission.
  */
@@ -47,7 +47,7 @@ class MainActivity : ComponentActivity() {
 
         if (isDebuggable()) WebView.setWebContentsDebuggingEnabled(true)
 
-        val background = getColor(R.color.tank_bg)
+        val background = getColor(R.color.app_bg)
         web = WebView(this).apply {
             setBackgroundColor(background)
             isFocusableInTouchMode = true
@@ -80,13 +80,17 @@ class MainActivity : ComponentActivity() {
 
         setContentView(web)
         goImmersive()
-        web.loadUrl(GAME_URL)
+        web.loadUrl(LAUNCHER_URL)
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                // The page pauses the battle and returns true; once it declines, back means exit.
+                // Three levels, in order: a game pauses itself and claims the press;
+                // otherwise step back out to the launcher; from the launcher, leave.
+                // The launcher defines no __androidBack hook, which is what makes it
+                // identifiable as the top of the stack.
                 web.evaluateJavascript(BACK_HOOK) { handled ->
-                    if (handled != "true") confirmExit()
+                    if (handled == "true") return@evaluateJavascript
+                    if (web.canGoBack()) web.goBack() else confirmExit()
                 }
             }
         })
@@ -140,7 +144,7 @@ class MainActivity : ComponentActivity() {
 
     private companion object {
         const val ASSET_DOMAIN = "appassets.androidplatform.net"
-        const val GAME_URL = "https://$ASSET_DOMAIN/assets/game/index.html"
+        const val LAUNCHER_URL = "https://$ASSET_DOMAIN/assets/launcher.html"
         const val BACK_HOOK = "(typeof window.__androidBack==='function'&&window.__androidBack()===true)"
         const val EXIT_WINDOW_MS = 2000L
     }
