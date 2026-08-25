@@ -1,3 +1,4 @@
+/* GENERATED — do not edit. Source: shared/photoreal.js (tools/sync-photoreal.mjs). */
 /* =============================================================================
    PHOTOREAL KIT — a small physically-based rendering layer shared by the games
    in this repo.
