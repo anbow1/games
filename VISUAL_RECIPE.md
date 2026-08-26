@@ -1,5 +1,12 @@
 # Visual recipe — extracted verbatim from tank-battle/index.html (the reference)
 
+> **Status:** this is the original work order, kept for the reasoning behind each
+> choice. The shipped implementation lives in `shared/photoreal.js` and goes
+> further in places — image-based lighting from a PMREM'd sky, a half-float
+> composer so bloom has real highlights to find, depth-derived SSAO, and SMAA in
+> place of FXAA. Where the two disagree, the kit is what runs.
+
+
 Rules for every game:
 - Three.js ES modules via the existing importmap (jsdelivr CDN). No external image/model assets — all textures are procedural `CanvasTexture` generated at load.
 - Reuse geometry/material instances; no per-frame allocations in hot loops (reuse scratch Vector3/Matrix4/Color).
