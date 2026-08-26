@@ -25,20 +25,40 @@ class El {
   focus() {}
 }
 
+global.ImageData = class ImageData {
+  constructor(data, w, h) {
+    if (typeof data === 'number') { h = w; w = data; data = new Uint8ClampedArray(w * h * 4); }
+    this.data = data; this.width = w; this.height = h === undefined ? data.length / 4 / w : h;
+  }
+};
+
 const els = new Map();
 function getEl(id) { if (!els.has(id)) els.set(id, new El()); return els.get(id); }
 
 // Minimal canvas + 2d context mock for procedural texture generation.
-function makeCtx() {
+// The photoreal kit synthesises normal/roughness maps by reading pixels back
+// out of the canvas, so getImageData has to return a real, correctly-sized
+// buffer rather than a stub — the Sobel pass indexes straight into it.
+function makeCtx(canvas) {
   const grad = { addColorStop() {} };
   return {
+    canvas,
     fillStyle: '', strokeStyle: '', lineWidth: 1, globalAlpha: 1,
     fillRect() {}, strokeRect() {}, beginPath() {}, moveTo() {}, lineTo() {},
-    stroke() {}, fill() {}, clearRect() {},
+    arc() {}, closePath() {}, stroke() {}, fill() {}, clearRect() {},
+    save() {}, restore() {}, translate() {}, rotate() {}, scale() {},
     createLinearGradient() { return grad; }, createRadialGradient() { return grad; },
+    getImageData(x, y, w, h) { return { width: w, height: h, data: new Uint8ClampedArray(w * h * 4) }; },
+    createImageData(w, h) { return { width: w, height: h, data: new Uint8ClampedArray(w * h * 4) }; },
+    putImageData() {},
+    drawImage() {},
   };
 }
-function makeCanvas() { return { width: 0, height: 0, getContext: () => makeCtx() }; }
+function makeCanvas() {
+  const c = { width: 0, height: 0 };
+  c.getContext = () => makeCtx(c);
+  return c;
+}
 
 global.document = {
   getElementById: getEl,

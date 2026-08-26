@@ -29,6 +29,11 @@ class Color {
   constructor(c) { this.r = 1; this.g = 1; this.b = 1; if (c != null) this.setHex(c); }
   setHex(c) { this.r = ((c >> 16) & 255) / 255; this.g = ((c >> 8) & 255) / 255; this.b = (c & 255) / 255; return this; }
   setHSL(h, s, l) { this.r = this.g = this.b = l; return this; }
+  setRGB(r, g, b) { this.r = r; this.g = g; this.b = b; return this; }
+  getHex() { return (Math.round(this.r * 255) << 16) | (Math.round(this.g * 255) << 8) | Math.round(this.b * 255); }
+  lerp(c, t) { this.r += (c.r - this.r) * t; this.g += (c.g - this.g) * t; this.b += (c.b - this.b) * t; return this; }
+  multiplyScalar(s) { this.r *= s; this.g *= s; this.b *= s; return this; }
+  clone() { return new Color().copy(this); }
   copy(c) { this.r = c.r; this.g = c.g; this.b = c.b; return this; }
   set(c) { return this.setHex(c); }
 }
@@ -52,6 +57,9 @@ class Object3D {
   add(o) { o.parent = this; this.children.push(o); return this; }
   remove(o) { const i = this.children.indexOf(o); if (i >= 0) { o.parent = null; this.children.splice(i, 1); } return this; }
   traverse(fn) { fn(this); for (const c of this.children) if (c.traverse) c.traverse(fn); }
+  updateMatrixWorld() { for (const c of this.children) if (c.updateMatrixWorld) c.updateMatrixWorld(); return this; }
+  updateMatrix() { return this; }
+  lookAt() { return this; }
   getWorldPosition(out) {
     let o = this, wx = 0, wy = 0, wz = 0;
     while (o) { wx += o.position.x; wy += o.position.y; wz += o.position.z; o = o.parent; }
@@ -88,7 +96,7 @@ class Light extends Object3D {
     this.isLight = true;
     this.shadow = {
       mapSize: new Vector(),
-      camera: { left: -1, right: 1, top: 1, bottom: -1, near: 1, far: 2000 },
+      camera: new OrthographicCamera(-1, 1, 1, -1, 1, 2000),
       bias: 0, normalBias: 0, visible: true, type: 0,
     };
   }
@@ -132,25 +140,93 @@ class Raycaster {
 class Clock { constructor() { this._last = 0; } getDelta() { const d = 1 / 60; this._last += d; return d; } }
 
 class WebGLRenderer {
-  constructor(opts) { this.options = opts; this.shadowMap = { enabled: false, type: 0 }; this.toneMapping = 0; this.toneMappingExposure = 1; this.outputColorSpace = 'sRGB'; }
+  constructor(opts) { this.options = opts; this.shadowMap = { enabled: false, type: 0 }; this.toneMapping = 0; this.toneMappingExposure = 1; this.outputColorSpace = 'sRGB';
+    this.capabilities = { getMaxAnisotropy: () => 16, isWebGL2: true };
+    this.info = { render: {}, memory: {} }; }
   setSize(w, h) { this._w = w; this._h = h; }
   setPixelRatio(r) { this.pixelRatio = r; }
   getPixelRatio() { return this.pixelRatio || 1; }
+  getDrawingBufferSize(out) { return out.set((this._w || 1280) * this.getPixelRatio(), (this._h || 720) * this.getPixelRatio()); }
+  getSize(out) { return out.set(this._w || 1280, this._h || 720); }
+  setRenderTarget() {}
+  getRenderTarget() { return null; }
+  clear() {}
   render() {}
+  dispose() {}
 }
 
-class BoxGeometry {}
-class CylinderGeometry {}
-class SphereGeometry {}
-class PlaneGeometry {}
-class RingGeometry {}
-class TorusGeometry {}
-class BufferGeometry { setFromPoints(pts) { this.points = pts; return this; } }
-class MeshStandardMaterial {}
-class MeshBasicMaterial {}
-class LineBasicMaterial {}
-class SpriteMaterial {}
-class ShaderMaterial {}
+// Geometries carry the attribute/dispose surface the photoreal kit touches
+// (per-face UV rewrites on the facades, disposal when a wave is torn down).
+class Geometry {
+  constructor() { this.attributes = {}; this.groups = []; }
+  setAttribute(name, attr) { this.attributes[name] = attr; return this; }
+  getAttribute(name) { return this.attributes[name]; }
+  scale() { return this; }
+  translate() { return this; }
+  rotateX() { return this; } rotateY() { return this; } rotateZ() { return this; }
+  computeVertexNormals() { return this; }
+  dispose() {}
+}
+class BoxGeometry extends Geometry {
+  constructor() {
+    super();
+    // A real BoxGeometry lays out 24 vertices (4 per face); tileBoxUVs walks
+    // that array directly, so the mock has to hand back the same length.
+    this.attributes.uv = new Float32BufferAttribute(new Float32Array(48), 2);
+    this.attributes.position = new Float32BufferAttribute(new Float32Array(72), 3);
+  }
+}
+class CylinderGeometry extends Geometry {}
+class SphereGeometry extends Geometry {}
+class PlaneGeometry extends Geometry {}
+class RingGeometry extends Geometry {}
+class TorusGeometry extends Geometry {}
+class CapsuleGeometry extends Geometry {}
+class CircleGeometry extends Geometry {}
+class BufferGeometry extends Geometry { setFromPoints(pts) { this.points = pts; return this; } }
+
+class Float32BufferAttribute {
+  constructor(array, itemSize) {
+    this.array = array instanceof Float32Array ? array : new Float32Array(array || 0);
+    this.itemSize = itemSize;
+    this.count = this.array.length / (itemSize || 1);
+    this.needsUpdate = false;
+  }
+  getX(i) { return this.array[i * this.itemSize]; }
+  getY(i) { return this.array[i * this.itemSize + 1]; }
+  getZ(i) { return this.array[i * this.itemSize + 2]; }
+  setXY(i, x, y) { this.array[i * this.itemSize] = x; this.array[i * this.itemSize + 1] = y; return this; }
+  setXYZ(i, x, y, z) { const o = i * this.itemSize; this.array[o] = x; this.array[o + 1] = y; this.array[o + 2] = z; return this; }
+}
+
+// Materials keep their constructor options so the game can read back and
+// mutate what it set (hit flashes clone a material and poke .emissive).
+class Material {
+  constructor(opts = {}) {
+    Object.assign(this, opts);
+    if (this.color != null && !(this.color instanceof Color)) this.color = new Color(this.color);
+    if (this.emissive != null && !(this.emissive instanceof Color)) this.emissive = new Color(this.emissive);
+    this.needsUpdate = false;
+  }
+  clone() { const m = new this.constructor(); Object.assign(m, this); m.color = this.color ? new Color().copy(this.color) : this.color; m.emissive = this.emissive ? new Color().copy(this.emissive) : this.emissive; return m; }
+  dispose() {}
+}
+// Real mesh materials always own a .color, and the lit ones an .emissive,
+// whether or not the constructor was given one — the game mutates both.
+class MeshMaterial extends Material {
+  constructor(opts = {}) { super(opts); if (!(this.color instanceof Color)) this.color = new Color(0xffffff); }
+}
+class MeshBasicMaterial extends MeshMaterial {}
+class MeshStandardMaterial extends MeshMaterial {
+  constructor(opts = {}) { super(opts); if (!(this.emissive instanceof Color)) this.emissive = new Color(0x000000); }
+}
+class MeshPhysicalMaterial extends MeshStandardMaterial {}
+class MeshDepthMaterial extends Material {}
+class LineBasicMaterial extends Material {}
+class SpriteMaterial extends Material {}
+class ShaderMaterial extends Material {
+  constructor(opts = {}) { super(opts); this.uniforms = opts.uniforms || {}; }
+}
 
 class Texture {
   constructor(image) {
@@ -159,10 +235,54 @@ class Texture {
     this.repeat = { x: 1, y: 1, set(x, y) { this.x = x; this.y = y; } };
     this.offset = { x: 0, y: 0 };
     this.anisotropy = 1; this.colorSpace = ''; this.needsUpdate = false;
+    this.userData = {};
+    this.mapping = 0;
   }
-  clone() { return new Texture(this.image); }
+  clone() { const t = new Texture(this.image); t.userData = { ...this.userData }; return t; }
+  dispose() {}
 }
 class CanvasTexture extends Texture {}
+
+class DepthTexture extends Texture {
+  constructor(w, h, type) { super(null); this.width = w; this.height = h; this.type = type; }
+}
+
+class WebGLRenderTarget {
+  constructor(w, h, opts = {}) {
+    this.width = w; this.height = h;
+    this.texture = new Texture(null);
+    Object.assign(this.texture, opts);
+    this.depthTexture = null;
+    this.depthBuffer = opts.depthBuffer !== false;
+  }
+  setSize(w, h) { this.width = w; this.height = h; }
+  dispose() {}
+}
+
+// fromScene returns something with a .texture, which is all the game keeps.
+class PMREMGenerator {
+  constructor(renderer) { this.renderer = renderer; }
+  compileEquirectangularShader() {}
+  compileCubemapShader() {}
+  fromScene() { return { texture: new Texture(null), dispose() {} }; }
+  fromEquirectangular() { return { texture: new Texture(null), dispose() {} }; }
+  dispose() {}
+}
+
+class Matrix4 {
+  constructor() { this.elements = new Array(16).fill(0); }
+  identity() { return this; }
+  copy() { return this; }
+  invert() { return this; }
+  multiplyMatrices() { return this; }
+  makeRotationFromQuaternion() { return this; }
+  setPosition() { return this; }
+  compose() { return this; }
+}
+
+class OrthographicCamera extends Camera {
+  constructor(l, r, t, b, near, far) { super(); this.left = l; this.right = r; this.top = t; this.bottom = b; this.near = near; this.far = far; }
+}
 
 class InstancedMesh extends Mesh {
   constructor(geometry, material, count = 0) {
@@ -200,12 +320,16 @@ const THREE = {
   PerspectiveCamera, Light, DirectionalLight, HemisphereLight, AmbientLight, PointLight,
   Scene, Raycaster, Clock, WebGLRenderer, Fog, FogExp2,
   BoxGeometry, CylinderGeometry, SphereGeometry, PlaneGeometry, RingGeometry, TorusGeometry, BufferGeometry,
-  MeshStandardMaterial, MeshBasicMaterial, LineBasicMaterial, SpriteMaterial, ShaderMaterial,
-  Texture, CanvasTexture, InstancedMesh,
+  CapsuleGeometry, CircleGeometry, Float32BufferAttribute, Matrix4, OrthographicCamera,
+  MeshStandardMaterial, MeshBasicMaterial, MeshPhysicalMaterial, MeshDepthMaterial,
+  LineBasicMaterial, SpriteMaterial, ShaderMaterial,
+  Texture, CanvasTexture, DepthTexture, WebGLRenderTarget, PMREMGenerator, InstancedMesh,
   PointerLockControls,
   PCFSoftShadowMap: 0, ACESFilmicToneMapping: 1, SRGBColorSpace: 'sRGB', BackSide: 3,
   AdditiveBlending: 1, DoubleSide: 2, FrontSide: 0,
   RepeatWrapping: 3, NearestFilter: 4, LinearFilter: 5,
+  HalfFloatType: 1016, UnsignedIntType: 1014, FloatType: 1015, RGBAFormat: 1023,
+  NoToneMapping: 0, LinearSRGBColorSpace: 'srgb-linear', EquirectangularReflectionMapping: 303,
 };
 
 export {
@@ -213,8 +337,10 @@ export {
   PerspectiveCamera, Light, DirectionalLight, HemisphereLight, AmbientLight, PointLight,
   Scene, Raycaster, Clock, WebGLRenderer, Fog, FogExp2,
   BoxGeometry, CylinderGeometry, SphereGeometry, PlaneGeometry, RingGeometry, TorusGeometry, BufferGeometry,
-  MeshStandardMaterial, MeshBasicMaterial, LineBasicMaterial, SpriteMaterial, ShaderMaterial,
-  Texture, CanvasTexture, InstancedMesh,
+  CapsuleGeometry, CircleGeometry, Float32BufferAttribute, Matrix4, OrthographicCamera,
+  MeshStandardMaterial, MeshBasicMaterial, MeshPhysicalMaterial, MeshDepthMaterial,
+  LineBasicMaterial, SpriteMaterial, ShaderMaterial,
+  Texture, CanvasTexture, DepthTexture, WebGLRenderTarget, PMREMGenerator, InstancedMesh,
   PointerLockControls,
 };
 export default THREE;

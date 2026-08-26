@@ -1,0 +1,2613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0a0e0a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect width=%2716%27 height=%2716%27 fill=%27%230a0e0a%27/%3E%3Crect x=%272%27 y=%278%27 width=%2712%27 height=%274%27 fill=%27%237cfc66%27/%3E%3Crect x=%276%27 y=%275%27 width=%275%27 height=%273%27 fill=%27%237cfc66%27/%3E%3Crect x=%2710%27 y=%276%27 width=%275%27 height=%271%27 fill=%27%237cfc66%27/%3E%3C/svg%3E">
+<meta name="mobile-web-app-capable" content="yes">
+<title>STEEL THUNDER — Modern Tank Combat</title>
+<style>
+  html,body{margin:0;padding:0;overflow:hidden;background:#0a0e0a;font-family:"Consolas","Lucida Console",monospace;color:#cfe6cf;user-select:none}
+  canvas#gl{display:block;position:absolute;inset:0}
+  .hud{position:absolute;pointer-events:none;z-index:5}
+  .panel{background:rgba(4,12,6,.72);border:1px solid rgba(120,255,150,.35);box-shadow:0 0 18px rgba(0,0,0,.6) inset}
+  #compassWrap{top:8px;left:50%;transform:translateX(-50%)}
+  #leftPanel{top:8px;left:8px;width:230px;padding:8px 10px;font-size:12px;line-height:1.7}
+  #hpbarOuter{width:100%;height:14px;border:1px solid rgba(120,255,150,.5);margin:3px 0;background:#111}
+  #hpbar{height:100%;width:100%;background:linear-gradient(90deg,#2e7d32,#7cfc66)}
+  .lbl{color:#7fae82;letter-spacing:1px;font-size:10px}
+  #ammoRow span{display:inline-block;margin-right:10px}
+  #reloadOuter{width:100%;height:8px;background:#111;border:1px solid rgba(120,255,150,.3);margin-top:4px}
+  #reloadBar{height:100%;width:0%;background:#ffd24a}
+  #mapWrap{top:8px;right:8px;padding:6px;text-align:center}
+  #mapTitle{font-size:10px;letter-spacing:2px;color:#9eff9e;margin-bottom:4px}
+  #droneStatus{font-size:10px;margin-top:4px;color:#ffd24a;min-height:14px}
+  #crosshair{top:50%;left:50%;width:0;height:0;display:none}
+  .ch{position:absolute;border:1px solid rgba(160,255,170,.9);box-shadow:0 0 4px rgba(120,255,150,.6)}
+  #chCircle{width:120px;height:120px;left:-60px;top:-60px;border-radius:50%}
+  #chDot{width:3px;height:3px;left:-1.5px;top:-1.5px;background:#9eff9e;border:none}
+  .chline{background:rgba(160,255,170,.9);height:1px;width:14px}
+  #periscope{display:none;box-shadow:inset 0 0 120px 45px rgba(0,0,0,.9), inset 0 0 30px 6px rgba(0,0,0,.75);border-radius:50%}
+  .sight{position:absolute;left:-125px;top:-125px;width:250px;height:250px;border:1.5px solid rgba(158,255,158,.8);border-radius:50%;box-shadow:0 0 10px rgba(120,255,150,.3),inset 0 0 10px rgba(120,255,150,.15)}
+  .sight::before{content:"";position:absolute;inset:62px;border:1px solid rgba(158,255,158,.35);border-radius:50%}
+  .sight::after{content:"";position:absolute;inset:14px;border-radius:50%;background-image:radial-gradient(circle,rgba(158,255,158,.5) 1.1px,transparent 1.7px);background-size:22px 22px;background-position:center}
+  .stxt{position:absolute;font-size:11px;letter-spacing:2px;color:#9eff9e;text-shadow:0 0 6px rgba(120,255,150,.8);white-space:nowrap}
+  #stTop{left:-110px;top:-164px;width:220px;text-align:center}
+  #stBot{left:-110px;top:158px;width:220px;text-align:center}
+  #vignette{inset:0;background:radial-gradient(ellipse at center,transparent 40%,rgba(160,0,0,.85) 100%);opacity:0}
+  #hitmark{top:50%;left:50%;transform:translate(-50%,-50%);color:#ff7a4d;font-size:30px;font-weight:bold;opacity:0;text-shadow:0 0 14px rgba(255,110,60,.95);transition:opacity .35s;white-space:nowrap}
+  #msgs{top:64px;left:50%;transform:translateX(-50%);text-align:center;font-size:15px;letter-spacing:2px;color:#ffe27a;text-shadow:0 0 8px rgba(255,190,60,.8)}
+  #bottomBar{bottom:10px;left:50%;transform:translateX(-50%);padding:6px 14px;font-size:12px;display:flex;gap:26px}
+  #speedo{font-size:22px;color:#9eff9e;text-shadow:0 0 8px rgba(120,255,150,.7)}
+  #roundSel{color:#ffd24a}
+  .overlay{position:absolute;inset:0;background:rgba(3,8,4,.9);z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  .overlay h1{font-size:44px;letter-spacing:10px;color:#9eff9e;text-shadow:0 0 24px rgba(120,255,150,.6);margin:0 0 6px}
+  .overlay h2{font-size:14px;letter-spacing:4px;color:#7fae82;font-weight:normal;margin-bottom:26px}
+  .tankbtn{pointer-events:auto;cursor:pointer;display:inline-block;width:250px;margin:6px;padding:12px;border:1px solid rgba(120,255,150,.4);background:rgba(10,30,14,.6);color:#cfe6cf;font-family:inherit;font-size:14px;letter-spacing:2px}
+  .tankbtn:hover{background:rgba(30,70,38,.8)}
+  .tankbtn.sel{border-color:#9eff9e;background:rgba(40,110,55,.5);box-shadow:0 0 14px rgba(120,255,150,.4)}
+  .startbtn{pointer-events:auto;cursor:pointer;margin-top:22px;padding:12px 46px;font-size:18px;letter-spacing:6px;font-family:inherit;color:#0a140c;background:#7cfc66;border:none;box-shadow:0 0 24px rgba(120,255,150,.5)}
+  .startbtn:hover{background:#b0ff9e}
+  table.keys{margin:20px auto;font-size:12px;color:#9dbf9f;border-collapse:collapse;text-align:left}
+  table.keys td{padding:3px 14px}
+  table.keys td:first-child{color:#ffd24a;letter-spacing:1px}
+  #endTitle{font-size:52px;letter-spacing:12px;margin-bottom:8px}
+
+  /* ================= ANDROID TOUCH BUILD ================= */
+  :root{--hs:1;--sl:env(safe-area-inset-left,0px);--sr:env(safe-area-inset-right,0px);--sb:env(safe-area-inset-bottom,0px)}
+  html,body{width:100%;height:100%;touch-action:none;overscroll-behavior:none;
+    -webkit-user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+  /* HUD panels scale with screen height so they stay readable on phones and tablets alike */
+  #leftPanel{transform:scale(var(--hs));transform-origin:top left;left:calc(6px + var(--sl))}
+  #mapWrap{transform:scale(var(--hs));transform-origin:top right;right:calc(6px + var(--sr))}
+  #compassWrap{transform:translateX(-50%) scale(var(--hs));transform-origin:top center}
+  #bottomBar{transform:translateX(-50%) scale(var(--hs));transform-origin:bottom center;
+    bottom:calc(2px + var(--sb));gap:2.2vh;font-size:1.7vh;padding:.5vh 2vh}
+  #speedo{font-size:2.8vh}
+  #msgs{top:9vh;font-size:1.9vh}
+  #hitmark{font-size:4.4vh}
+  .sight{left:-17vh;top:-17vh;width:34vh;height:34vh}
+  .sight::before{inset:8.4vh}
+  #chCircle{width:16vh;height:16vh;left:-8vh;top:-8vh}
+  #stTop{left:-15vh;top:-22vh;width:30vh;font-size:1.6vh}
+  #stBot{left:-15vh;top:21vh;width:30vh;font-size:1.6vh}
+  /* overlays sized in vh so they never overflow a short landscape viewport */
+  .overlay{padding:2vh;overflow-y:auto}
+  .overlay h1{font-size:5.4vh;letter-spacing:1.1vh;margin:0 0 .5vh}
+  .overlay h2{font-size:1.9vh;letter-spacing:.45vh;margin-bottom:1.8vh}
+  .tankbtn{width:33vh;font-size:2vh;padding:1.3vh;margin:.6vh}
+  .tankbtn span{font-size:1.4vh!important}
+  .startbtn{margin-top:2vh;padding:1.5vh 6vh;font-size:2.6vh;letter-spacing:.7vh}
+  #endTitle{font-size:6vh;letter-spacing:1.4vh}
+
+  /* ---- start-screen control map + settings ---- */
+  #ctrlMap{width:min(78vw,86vh);margin:1.6vh auto .4vh;font-size:1.5vh;color:#9dbf9f;letter-spacing:.1vh}
+  .cm{border:1px dashed rgba(120,255,150,.3);background:rgba(8,22,12,.5);padding:1vh .6vh;text-align:center;line-height:1.5}
+  .cm span{color:#7fae82;font-size:1.25vh}
+  .cmRow{display:flex;gap:.6vh;margin-top:.6vh}
+  .cmRow>.cm{flex:1}
+  .cmDrive{color:#9eff9e}.cmFire{color:#ffbe8a;border-color:rgba(255,140,90,.4)}
+  .cmSpacer{border-style:none;background:none}
+  .setRow{margin-top:1vh;font-size:1.4vh;display:flex;align-items:center;justify-content:center;gap:.6vh}
+  .setLbl{color:#7fae82;letter-spacing:.25vh;width:19vh;text-align:right}
+  .sbtn{pointer-events:auto;cursor:pointer;font-family:inherit;font-size:1.4vh;letter-spacing:.15vh;
+    padding:.7vh 1.6vh;color:#9dbf9f;border:1px solid rgba(120,255,150,.3);background:rgba(10,30,14,.6)}
+  .sbtn.sel{border-color:#9eff9e;color:#0a140c;background:#7cfc66}
+
+  /* ---- touch control layer ---- */
+  #touch{position:absolute;inset:0;z-index:6;display:none;touch-action:none}
+  #touch.on{display:block}
+  #turretHint{position:absolute;left:0;right:0;top:0;height:44%;pointer-events:none;
+    border-bottom:1px dashed rgba(120,255,150,.16);transition:opacity 1.2s;
+    display:flex;align-items:center;justify-content:center}
+  #turretHint b{font-weight:normal;font-size:2.2vh;letter-spacing:.45vh;color:rgba(158,255,158,.6);
+    text-shadow:0 0 1vh rgba(0,0,0,.95)}
+  #stick{position:absolute;width:22vh;height:22vh;border-radius:50%;pointer-events:none;opacity:.55;
+    border:1px solid rgba(120,255,150,.3);background:radial-gradient(circle,rgba(10,30,14,.3),rgba(4,12,6,.55));
+    left:calc(3vh + var(--sl));bottom:calc(3vh + var(--sb));transition:opacity .2s}
+  #stick.live{opacity:1}
+  #stick::before{content:"";position:absolute;inset:38%;border-radius:50%;border:1px solid rgba(120,255,150,.18)}
+  #stickKnob{position:absolute;left:50%;top:50%;width:8.6vh;height:8.6vh;margin:-4.3vh 0 0 -4.3vh;border-radius:50%;
+    border:1px solid rgba(158,255,158,.55);background:rgba(40,110,55,.45);box-shadow:0 0 2vh rgba(120,255,150,.3)}
+  .tbtn{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;
+    font-family:inherit;line-height:1.35;letter-spacing:.18vh;color:#cfe6cf;overflow:hidden;
+    border:1px solid rgba(120,255,150,.45);background:rgba(10,30,14,.5);box-shadow:0 0 2vh rgba(0,0,0,.5) inset}
+  .tbtn.press{background:rgba(60,150,80,.7);box-shadow:0 0 2.4vh rgba(120,255,150,.55)}
+  .tbtn>* {position:relative;z-index:1}
+  #btnFire{right:calc(3vh + var(--sr));bottom:calc(3vh + var(--sb));width:16.5vh;height:16.5vh;font-size:2.1vh;
+    border-color:rgba(255,150,95,.65);background:rgba(52,18,8,.55);color:#ffbe8a}
+  #btnFire.press{background:rgba(190,78,28,.8);color:#fff}
+  #btnFire.rl{opacity:.5}
+  #fireRing{position:absolute;inset:0;border-radius:50%;z-index:0}
+  #fireAmmo{display:block;font-size:1.5vh;color:#ffd24a}
+  #btnMG{right:calc(21vh + var(--sr));bottom:calc(4.6vh + var(--sb));width:11.6vh;height:11.6vh;font-size:1.8vh}
+  #utilCol{position:absolute;right:calc(3vh + var(--sr));bottom:calc(21.5vh + var(--sb));
+    display:flex;flex-direction:column-reverse;gap:1.1vh}
+  .ubtn{width:16.5vh;height:5.1vh;border-radius:1vh;display:flex;align-items:center;justify-content:center;
+    font-family:inherit;font-size:1.65vh;letter-spacing:.15vh;color:#9eff9e;
+    border:1px solid rgba(120,255,150,.32);background:rgba(4,12,6,.6)}
+  .ubtn.press{background:rgba(40,110,55,.65);color:#fff}
+  .ubtn.hot{border-color:#ffd24a;color:#ffd24a}
+  #btnBrake{position:absolute;left:calc(27vh + var(--sl));bottom:calc(4.5vh + var(--sb));width:12vh;height:7vh;
+    border-radius:1vh;font-size:1.8vh;color:#ffd24a;border-color:rgba(255,210,74,.4)}
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+
+<div class="hud" id="compassWrap"><div class="panel" style="padding:3px 6px"><canvas id="compass" width="420" height="34"></canvas></div></div>
+
+<div class="hud panel" id="leftPanel">
+  <div class="lbl">HULL INTEGRITY</div>
+  <div id="hpbarOuter"><div id="hpbar"></div></div>
+  <div class="lbl">MAIN GUN 120mm &nbsp; <span id="roundSel">APFSDS-DT</span></div>
+  <div id="ammoRow"><span id="apAmmo">AP ×24</span><span id="heAmmo">HE ×12</span></div>
+  <div id="reloadOuter"><div id="reloadBar"></div></div>
+  <div style="margin-top:6px" class="lbl">DRONE <span id="droneBtn" style="color:#9eff9e">STOWED</span></div>
+</div>
+
+<div class="hud panel" id="mapWrap">
+  <div id="mapTitle">TACTICAL FEED — UAV</div>
+  <canvas id="tac" width="300" height="300"></canvas>
+  <div id="droneStatus">UAV STOWED — ENDURANCE 10:00</div>
+</div>
+
+<div class="hud" id="crosshair"><div class="sight"></div><div class="chline" style="left:-24px;top:0"></div><div class="chline" style="left:10px;top:0"></div><div class="chline" style="top:-24px;left:0;width:1px;height:14px"></div><div class="chline" style="top:10px;left:0;width:1px;height:14px"></div><div id="chDot"></div><span class="stxt" id="stTop">AZ 000° · EL +0.0°</span><span class="stxt" id="stBot">RNG --- m · SPD 0 km/h</span></div>
+<div class="hud" id="hitmark">✕</div>
+<div class="hud" id="periscope"></div>
+<div class="hud" id="vignette"></div>
+<div class="hud" id="msgs"></div>
+
+<div class="hud panel" id="bottomBar">
+  <div><span id="speedo">0</span> km/h</div>
+  <div class="lbl">ROUND <span id="roundSel2">APFSDS-DT</span></div>
+</div>
+
+
+<div id="touch">
+  <div id="turretHint"><b>DRAG HERE TO SLEW TURRET</b></div>
+  <div id="stick"><div id="stickKnob"></div></div>
+  <div id="btnBrake" class="ubtn">BRAKE</div>
+  <div id="utilCol">
+    <div class="ubtn" id="btnRound">AP</div>
+    <div class="ubtn" id="btnCam">CAM EXT</div>
+    <div class="ubtn" id="btnUav">UAV</div>
+    <div class="ubtn" id="btnPause">&#10073;&#10073; PAUSE</div>
+  </div>
+  <div id="btnMG" class="tbtn">COAX<br>MG</div>
+  <div id="btnFire" class="tbtn"><div id="fireRing"></div><span>120mm<b id="fireAmmo">AP 24</b></span></div>
+</div>
+
+<div class="overlay" id="pauseScreen" style="display:none">
+  <h1>PAUSED</h1>
+  <h2 id="pauseSub">ENGAGEMENT ON HOLD</h2>
+  <button class="startbtn" id="resumeBtn">RESUME</button>
+  <button class="tankbtn" style="margin-top:2vh" onclick="location.reload()">ABORT &amp; RESTART</button>
+</div>
+
+<div class="overlay" id="startScreen">
+  <h1>STEEL THUNDER</h1>
+  <h2>MODERN TANK COMBAT — DESERT THEATER</h2>
+  <div style="font-size:13px;letter-spacing:2px;color:#9eff9e">SELECT YOUR CHASSIS</div>
+  <div>
+    <button class="tankbtn sel" id="btnAbrams">M1A2 ABRAMS<br><span style="font-size:10px;color:#7fae82">120mm L44 · CROWS MG · HEAT REACTIVE</span></button>
+    <button class="tankbtn" id="btnT90">T-90A<br><span style="font-size:10px;color:#7fae82">125mm 2A46M · KORA Active Protection</span></button>
+  </div>
+  <div id="ctrlMap">
+    <div class="cm">TOP OF SCREEN — DRAG TO SLEW TURRET &amp; ELEVATE GUN<br><span>left / right = azimuth · up / down = elevation</span></div>
+    <div class="cmRow">
+      <div class="cm cmDrive">&#9678; LEFT STICK<br><span>push to drive · tilt to steer</span></div>
+      <div class="cm cmSpacer"></div>
+      <div class="cm cmFire">&#9673; &#9673; RIGHT<br><span>120mm main gun · coax MG</span></div>
+    </div>
+  </div>
+  <div class="setRow"><span class="setLbl">GRAPHICS</span>
+    <button class="sbtn" data-q="low">LOW</button><button class="sbtn" data-q="med">MEDIUM</button><button class="sbtn" data-q="high">HIGH</button></div>
+  <div class="setRow"><span class="setLbl">AIM SENSITIVITY</span>
+    <button class="sbtn" data-s="0.65">LOW</button><button class="sbtn" data-s="1">NORMAL</button><button class="sbtn" data-s="1.5">HIGH</button></div>
+  <button class="startbtn" id="startBtn">START BATTLE</button>
+</div>
+
+<div class="overlay" id="endScreen" style="display:none">
+  <h1 id="endTitle">VICTORY</h1>
+  <h2 id="endSub"></h2>
+  <button class="startbtn" onclick="location.reload()">RE-ENGAGE</button>
+</div>
+
+<script type="importmap">{"imports":{"three":"./vendor/three/build/three.module.min.js","three/addons/":"./vendor/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
+import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
+import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
+import {ShaderPass} from 'three/addons/postprocessing/ShaderPass.js';
+import {SMAAPass} from 'three/addons/postprocessing/SMAAPass.js';
+"use strict";
+
+/* === BEGIN photoreal kit (generated by tools/sync-shared.mjs) === */
+const PR = (() => {
+/* =============================================================================
+   PHOTOREAL KIT — a small physically-based rendering layer shared by the games
+   in this repo.
+   =============================================================================
+
+   Three things move a Three.js scene towards photorealism more than anything
+   else, and this module provides all three:
+
+     1. IBL. Without an environment map, metal and glass are lit only by the
+        analytic lights and read as dead plastic. `skyEnvironment()` prefilters
+        the game's own procedural sky into a PMREM probe, so every surface
+        reflects the actual sky and picks up bounce from the ground.
+
+     2. An HDR post chain. Scene rendering stays linear and unclamped; tone
+        mapping happens once at the end, after bloom, in `GradeShader` — which
+        also applies the small photographic imperfections (grain, vignette,
+        chromatic aberration, unsharp mask) that sell a rendered frame as a
+        photographed one.
+
+     3. Real surface detail. `metalPanels()`, `roughSurface()`, `fabric()` and
+        `skin()` synthesise albedo + normal + roughness maps on a canvas at
+        load time. No downloads, so the games stay self-contained.
+
+   Each game folder keeps its own copy so it stays self-contained: city-storm
+   imports photoreal.js next to its game.js, while the two single-file games
+   have the source inlined into their HTML. Edit this file, then run
+   tools/sync-shared.mjs to propagate it.
+
+   Requires: THREE (r150+) in scope.
+============================================================================= */
+
+/* ========================= noise + canvas plumbing ========================= */
+
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Tileable value noise on an N×N lattice, so generated maps repeat seamlessly. */
+function tileNoise(period, seed) {
+  const rnd = mulberry32(seed);
+  const g = new Float32Array(period * period);
+  for (let i = 0; i < g.length; i++) g[i] = rnd();
+  const at = (x, y) => g[((y % period) + period) % period * period + (((x % period) + period) % period)];
+  return function (x, y) {
+    const xi = Math.floor(x), yi = Math.floor(y);
+    let fx = x - xi, fy = y - yi;
+    fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy);
+    const a = at(xi, yi), b = at(xi + 1, yi), c = at(xi, yi + 1), d = at(xi + 1, yi + 1);
+    return (a * (1 - fx) + b * fx) * (1 - fy) + (c * (1 - fx) + d * fx) * fy;
+  };
+}
+
+function fbm(noise, x, y, octaves = 4, lacunarity = 2, gain = 0.5) {
+  let sum = 0, amp = 0.5, freq = 1, norm = 0;
+  for (let i = 0; i < octaves; i++) {
+    sum += amp * noise(x * freq, y * freq);
+    norm += amp; amp *= gain; freq *= lacunarity;
+  }
+  return sum / norm;
+}
+
+function cv(size) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  return c;
+}
+
+const clamp01 = (v) => v < 0 ? 0 : v > 1 ? 1 : v;
+
+/**
+ * Sobel a height field into a tangent-space normal map.
+ * Sampling wraps, so the result tiles as cleanly as its input.
+ */
+function heightToNormal(height, size, strength = 2.0) {
+  const out = new Uint8ClampedArray(size * size * 4);
+  const h = (x, y) => height[(((y % size) + size) % size) * size + (((x % size) + size) % size)];
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const dx = (h(x - 1, y - 1) + 2 * h(x - 1, y) + h(x - 1, y + 1))
+               - (h(x + 1, y - 1) + 2 * h(x + 1, y) + h(x + 1, y + 1));
+      const dy = (h(x - 1, y - 1) + 2 * h(x, y - 1) + h(x + 1, y - 1))
+               - (h(x - 1, y + 1) + 2 * h(x, y + 1) + h(x + 1, y + 1));
+      let nx = dx * strength, ny = dy * strength, nz = 1;
+      const len = Math.hypot(nx, ny, nz);
+      nx /= len; ny /= len; nz /= len;
+      const i = (y * size + x) * 4;
+      out[i]     = (nx * 0.5 + 0.5) * 255;
+      out[i + 1] = (ny * 0.5 + 0.5) * 255;
+      out[i + 2] = (nz * 0.5 + 0.5) * 255;
+      out[i + 3] = 255;
+    }
+  }
+  const c = cv(size);
+  c.getContext('2d').putImageData(new ImageData(out, size, size), 0, 0);
+  return c;
+}
+
+/** Pack a single channel into a greyscale texture (roughness / metalness / AO). */
+function channelCanvas(data, size) {
+  const out = new Uint8ClampedArray(size * size * 4);
+  for (let i = 0; i < size * size; i++) {
+    const v = clamp01(data[i]) * 255;
+    out[i * 4] = out[i * 4 + 1] = out[i * 4 + 2] = v;
+    out[i * 4 + 3] = 255;
+  }
+  const c = cv(size);
+  c.getContext('2d').putImageData(new ImageData(out, size, size), 0, 0);
+  return c;
+}
+
+function texture(canvas, { srgb = false, repeat = 1, aniso = 8 } = {}) {
+  const t = new THREE.CanvasTexture(canvas);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(repeat, repeat);
+  t.anisotropy = aniso;
+  if (srgb) {
+    // r152 renamed this; support both so the kit works either side of the change.
+    if ('colorSpace' in t) t.colorSpace = THREE.SRGBColorSpace;
+    else t.encoding = THREE.sRGBEncoding;
+  }
+  t.needsUpdate = true;
+  return t;
+}
+
+/* ============================ material libraries =========================== */
+
+/**
+ * Painted sheet metal: panel seams, rivet rows, edge wear, grime streaks.
+ * The workhorse for tank hulls, aircraft skins and machinery.
+ */
+function metalPanels({
+  size = 512, color = '#6b6f5e', panel = 4, rivets = true,
+  wear = 0.5, streak = 0.4, seed = 1, repeat = 1, aniso = 8,
+} = {}) {
+  const c = cv(size), g = c.getContext('2d');
+  const rnd = mulberry32(seed);
+  const n1 = tileNoise(16, seed), n2 = tileNoise(64, seed + 7);
+  const height = new Float32Array(size * size);
+  const rough = new Float32Array(size * size);
+  const metal = new Float32Array(size * size);
+
+  g.fillStyle = color;
+  g.fillRect(0, 0, size, size);
+
+  // Per-panel tonal drift — no two sheets take paint identically.
+  const step = size / panel;
+  for (let py = 0; py < panel; py++) {
+    for (let px = 0; px < panel; px++) {
+      g.globalAlpha = 0.05 + rnd() * 0.09;
+      g.fillStyle = rnd() < 0.5 ? '#ffffff' : '#000000';
+      g.fillRect(px * step, py * step, step, step);
+    }
+  }
+  g.globalAlpha = 1;
+
+  // Mottled weathering.
+  const img = g.getImageData(0, 0, size, size);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = (y * size + x) * 4;
+      const u = x / size * 8, v = y / size * 8;
+      const m = fbm(n1, u, v, 4) - 0.5;
+      const grain = (n2(x / size * 64, y / size * 64) - 0.5) * 0.10;
+      const k = 1 + m * 0.30 * wear + grain;
+      img.data[i]     *= k;
+      img.data[i + 1] *= k;
+      img.data[i + 2] *= k;
+      const idx = y * size + x;
+      height[idx] = 0.5 + grain * 0.5;
+      rough[idx]  = clamp01(0.55 + m * 0.35 * wear + grain);
+      metal[idx]  = clamp01(0.15 + Math.max(0, m) * 0.5 * wear);
+    }
+  }
+  g.putImageData(img, 0, 0);
+
+  // Panel seams: a dark line with a bright lip, which is what reads as a gap.
+  g.lineWidth = Math.max(1, size / 512);
+  for (let i = 1; i < panel; i++) {
+    const p = Math.round(i * step) + 0.5;
+    g.strokeStyle = 'rgba(0,0,0,0.55)';
+    g.beginPath(); g.moveTo(p, 0); g.lineTo(p, size); g.moveTo(0, p); g.lineTo(size, p); g.stroke();
+    g.strokeStyle = 'rgba(255,255,255,0.10)';
+    g.beginPath(); g.moveTo(p + 1, 0); g.lineTo(p + 1, size); g.moveTo(0, p + 1); g.lineTo(size, p + 1); g.stroke();
+    for (let t = 0; t < size; t++) {           // seams are creases in the height field too
+      height[t * size + Math.round(i * step)] = 0.08;
+      height[Math.round(i * step) * size + t] = 0.08;
+    }
+  }
+
+  if (rivets) {
+    const pitch = Math.max(8, size / 32);
+    for (let i = 1; i < panel; i++) {
+      for (let t = pitch; t < size; t += pitch) {
+        for (const [rx, ry] of [[i * step, t], [t, i * step]]) {
+          g.fillStyle = 'rgba(255,255,255,0.16)';
+          g.beginPath(); g.arc(rx, ry - 0.6, size / 340, 0, 6.283); g.fill();
+          g.fillStyle = 'rgba(0,0,0,0.32)';
+          g.beginPath(); g.arc(rx, ry + 0.6, size / 340, 0, 6.283); g.fill();
+          const hx = Math.round(rx), hy = Math.round(ry);
+          if (hx > 0 && hx < size && hy > 0 && hy < size) height[hy * size + hx] = 0.95;
+        }
+      }
+    }
+  }
+
+  // Scratches that cut through to brighter, rougher-edged bare metal.
+  const scratches = Math.round(28 * wear);
+  for (let i = 0; i < scratches; i++) {
+    const x = rnd() * size, y = rnd() * size, a = rnd() * 6.283, len = 8 + rnd() * size * 0.28;
+    g.strokeStyle = `rgba(255,255,255,${0.06 + rnd() * 0.16})`;
+    g.lineWidth = 0.6 + rnd() * 1.1;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len); g.stroke();
+  }
+
+  // Vertical grime streaks below the seams — gravity is a strong realism cue.
+  if (streak > 0) {
+    for (let i = 0; i < Math.round(18 * streak); i++) {
+      const x = rnd() * size, y = rnd() * size, len = size * (0.08 + rnd() * 0.3);
+      const grad = g.createLinearGradient(0, y, 0, y + len);
+      grad.addColorStop(0, `rgba(28,22,16,${0.20 + rnd() * 0.20})`);
+      grad.addColorStop(1, 'rgba(28,22,16,0)');
+      g.fillStyle = grad;
+      g.fillRect(x, y, 1 + rnd() * 4, len);
+    }
+  }
+
+  return {
+    map: texture(c, { srgb: true, repeat, aniso }),
+    normalMap: texture(heightToNormal(height, size, 1.6), { repeat, aniso }),
+    roughnessMap: texture(channelCanvas(rough, size), { repeat, aniso }),
+    metalnessMap: texture(channelCanvas(metal, size), { repeat, aniso }),
+  };
+}
+
+/**
+ * Mineral surfaces — asphalt, concrete, dirt, rock. `grit` sets the aggregate
+ * size, `crack` how broken the surface is.
+ */
+function roughSurface({
+  size = 512, color = '#3a3d44', grit = 0.5, crack = 0.25, stain = 0.35,
+  roughBase = 0.92, seed = 3, repeat = 1, aniso = 8,
+} = {}) {
+  const c = cv(size), g = c.getContext('2d');
+  const rnd = mulberry32(seed);
+  const nBig = tileNoise(8, seed), nMid = tileNoise(32, seed + 3), nFine = tileNoise(128, seed + 9);
+  const height = new Float32Array(size * size);
+  const rough = new Float32Array(size * size);
+
+  g.fillStyle = color; g.fillRect(0, 0, size, size);
+  const img = g.getImageData(0, 0, size, size);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = (y * size + x) * 4, idx = y * size + x;
+      const u = x / size, v = y / size;
+      const broad = fbm(nBig, u * 8, v * 8, 3) - 0.5;
+      const mid   = fbm(nMid, u * 32, v * 32, 3) - 0.5;
+      const fine  = nFine(u * 128, v * 128) - 0.5;
+      const detail = broad * 0.5 + mid * 0.6 * grit + fine * 0.8 * grit;
+      const k = 1 + detail * 0.55;
+      img.data[i]     *= k;
+      img.data[i + 1] *= k;
+      img.data[i + 2] *= k;
+      height[idx] = clamp01(0.5 + detail * 0.9);
+      rough[idx]  = clamp01(roughBase + detail * 0.25);
+    }
+  }
+  g.putImageData(img, 0, 0);
+
+  // Cracks: a random walk that forks, which looks far more natural than lines.
+  const cracks = Math.round(size / 26 * crack * 4);
+  for (let i = 0; i < cracks; i++) {
+    let x = rnd() * size, y = rnd() * size, a = rnd() * 6.283;
+    g.strokeStyle = `rgba(0,0,0,${0.25 + rnd() * 0.35})`;
+    g.lineWidth = 0.5 + rnd() * 1.4;
+    g.beginPath(); g.moveTo(x, y);
+    const steps = 12 + Math.floor(rnd() * 30);
+    for (let s = 0; s < steps; s++) {
+      a += (rnd() - 0.5) * 0.9;
+      x += Math.cos(a) * 4; y += Math.sin(a) * 4;
+      g.lineTo(x, y);
+      const hx = Math.round(x), hy = Math.round(y);
+      if (hx >= 0 && hx < size && hy >= 0 && hy < size) height[hy * size + hx] = 0.02;
+    }
+    g.stroke();
+  }
+
+  // Damp patches / oil — darker and markedly smoother than dry surface.
+  for (let i = 0; i < Math.round(14 * stain); i++) {
+    const x = rnd() * size, y = rnd() * size, r = size * (0.03 + rnd() * 0.13);
+    const grad = g.createRadialGradient(x, y, 0, x, y, r);
+    grad.addColorStop(0, `rgba(0,0,0,${0.10 + rnd() * 0.22})`);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = grad;
+    g.beginPath(); g.arc(x, y, r, 0, 6.283); g.fill();
+    const px = Math.round(x), py = Math.round(y), pr = Math.round(r);
+    for (let yy = Math.max(0, py - pr); yy < Math.min(size, py + pr); yy++) {
+      for (let xx = Math.max(0, px - pr); xx < Math.min(size, px + pr); xx++) {
+        const d = Math.hypot(xx - px, yy - py) / pr;
+        if (d < 1) rough[yy * size + xx] *= 1 - (1 - d) * 0.45;
+      }
+    }
+  }
+
+  return {
+    map: texture(c, { srgb: true, repeat, aniso }),
+    normalMap: texture(heightToNormal(height, size, 2.4), { repeat, aniso }),
+    roughnessMap: texture(channelCanvas(rough, size), { repeat, aniso }),
+  };
+}
+
+/** Woven cloth — uniforms, webbing, tarpaulin. */
+function fabric({
+  size = 256, color = '#3d4232', weave = 2, seed = 5, repeat = 1, aniso = 4,
+} = {}) {
+  const c = cv(size), g = c.getContext('2d');
+  const n = tileNoise(32, seed);
+  const height = new Float32Array(size * size);
+  const rough = new Float32Array(size * size);
+
+  g.fillStyle = color; g.fillRect(0, 0, size, size);
+  const img = g.getImageData(0, 0, size, size);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = (y * size + x) * 4, idx = y * size + x;
+      // Interleaved warp and weft.
+      const warp = Math.sin(x / weave * Math.PI) * 0.5 + 0.5;
+      const weft = Math.sin(y / weave * Math.PI) * 0.5 + 0.5;
+      const thread = ((x / weave | 0) + (y / weave | 0)) % 2 === 0 ? warp : weft;
+      const dirt = fbm(n, x / size * 12, y / size * 12, 3) - 0.5;
+      const k = 0.90 + thread * 0.14 + dirt * 0.20;
+      img.data[i]     *= k;
+      img.data[i + 1] *= k;
+      img.data[i + 2] *= k;
+      height[idx] = thread * 0.5 + dirt * 0.5;
+      rough[idx]  = clamp01(0.86 + dirt * 0.18 - thread * 0.08);
+    }
+  }
+  g.putImageData(img, 0, 0);
+  return {
+    map: texture(c, { srgb: true, repeat, aniso }),
+    normalMap: texture(heightToNormal(height, size, 0.35), { repeat, aniso }),
+    roughnessMap: texture(channelCanvas(rough, size), { repeat, aniso }),
+  };
+}
+
+/** Sawn timber — crates, pallets, boarding. */
+function wood({
+  size = 256, color = '#8a6a3a', planks = 4, seed = 7, repeat = 1, aniso = 8,
+} = {}) {
+  const c = cv(size), g = c.getContext('2d');
+  const rnd = mulberry32(seed);
+  const n = tileNoise(32, seed);
+  const height = new Float32Array(size * size);
+  const rough = new Float32Array(size * size);
+
+  g.fillStyle = color; g.fillRect(0, 0, size, size);
+  const img = g.getImageData(0, 0, size, size);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = (y * size + x) * 4, idx = y * size + x;
+      // Grain runs along the plank and wobbles, so warp the sample coordinate
+      // rather than drawing straight lines.
+      const warp = fbm(n, x / size * 3, y / size * 3, 3) - 0.5;
+      const rings = Math.sin((y / size * 26 + warp * 5) * Math.PI) * 0.5 + 0.5;
+      const fibre = (n(x / size * 8, y / size * 90) - 0.5);
+      const k = 0.86 + rings * 0.20 + fibre * 0.14 + warp * 0.12;
+      img.data[i]     *= k;
+      img.data[i + 1] *= k * 0.98;
+      img.data[i + 2] *= k * 0.94;
+      height[idx] = rings * 0.55 + fibre * 0.45;
+      rough[idx]  = clamp01(0.80 + fibre * 0.16 - rings * 0.06);
+    }
+  }
+  g.putImageData(img, 0, 0);
+
+  // Plank joints, plus a shadow lip so the boards read as separate pieces.
+  const step = size / planks;
+  g.lineWidth = Math.max(1.5, size / 200);
+  for (let i = 1; i < planks; i++) {
+    const p = Math.round(i * step) + 0.5;
+    g.strokeStyle = 'rgba(20,12,6,0.62)';
+    g.beginPath(); g.moveTo(0, p); g.lineTo(size, p); g.stroke();
+    for (let t = 0; t < size; t++) height[Math.round(i * step) * size + t] = 0.03;
+  }
+  // Nail heads at the plank ends.
+  for (let i = 0; i < planks; i++) {
+    for (const nx of [size * 0.08, size * 0.92]) {
+      const ny = i * step + step * 0.5;
+      g.fillStyle = 'rgba(30,26,22,0.55)';
+      g.beginPath(); g.arc(nx, ny, size / 110, 0, 6.283); g.fill();
+    }
+  }
+  // Scuffs.
+  for (let i = 0; i < 22; i++) {
+    g.strokeStyle = `rgba(40,28,16,${0.05 + rnd() * 0.12})`;
+    g.lineWidth = 0.5 + rnd() * 1.5;
+    const x = rnd() * size, y = rnd() * size, a = (rnd() - 0.5) * 0.6;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * rnd() * size * 0.4, y + Math.sin(a) * 8); g.stroke();
+  }
+
+  return {
+    map: texture(c, { srgb: true, repeat, aniso }),
+    normalMap: texture(heightToNormal(height, size, 0.9), { repeat, aniso }),
+    roughnessMap: texture(channelCanvas(rough, size), { repeat, aniso }),
+  };
+}
+
+/**
+ * Skin. Faces read as plastic without pore-level roughness break-up and a
+ * little colour variation, which is all this provides — the specular response
+ * matters more than the albedo here.
+ */
+function skin({ size = 256, color = '#b07a5c', seed = 11, aniso = 4 } = {}) {
+  const c = cv(size), g = c.getContext('2d');
+  const rnd = mulberry32(seed);
+  const n = tileNoise(64, seed);
+  const height = new Float32Array(size * size);
+  const rough = new Float32Array(size * size);
+
+  g.fillStyle = color; g.fillRect(0, 0, size, size);
+  const img = g.getImageData(0, 0, size, size);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = (y * size + x) * 4, idx = y * size + x;
+      const blotch = fbm(n, x / size * 10, y / size * 10, 3) - 0.5;
+      const pore = (n(x / size * 96, y / size * 96) - 0.5);
+      img.data[i]     *= 1 + blotch * 0.16 + pore * 0.05;
+      img.data[i + 1] *= 1 + blotch * 0.10 + pore * 0.05;
+      img.data[i + 2] *= 1 + blotch * 0.06 + pore * 0.05;
+      height[idx] = 0.5 + pore * 0.35;
+      rough[idx]  = clamp01(0.52 + pore * 0.30 + blotch * 0.12);
+    }
+  }
+  g.putImageData(img, 0, 0);
+  // Stubble / grime around the jaw, kept subtle.
+  for (let i = 0; i < 240; i++) {
+    g.fillStyle = `rgba(40,28,22,${0.03 + rnd() * 0.05})`;
+    g.beginPath(); g.arc(rnd() * size, rnd() * size, rnd() * 2.2, 0, 6.283); g.fill();
+  }
+  return {
+    map: texture(c, { srgb: true, aniso }),
+    // Pores are a roughness cue far more than a silhouette cue; push the normal
+    // map any harder and skin reads as orange peel.
+    normalMap: texture(heightToNormal(height, size, 0.12), { aniso }),
+    roughnessMap: texture(channelCanvas(rough, size), { aniso }),
+  };
+}
+
+/* ============================ image-based lighting ========================= */
+
+/**
+ * Prefilter a sky into an irradiance/reflection probe.
+ *
+ * `skyMaterial` is the game's own sky shader, so the lighting always agrees
+ * with what the player sees on the horizon. A ground hemisphere is included
+ * deliberately: without it the lower half of every object is lit sky-blue from
+ * below, which is the single most common giveaway of a naive Three.js scene.
+ */
+function skyEnvironment(renderer, {
+  skyMaterial = null, skyColor = 0x9db8cc, groundColor = 0x3b3529, intensity = 1, horizonFade = 0.35,
+} = {}) {
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  pmrem.compileCubemapShader();
+
+  const envScene = new THREE.Scene();
+
+  if (skyMaterial) {
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(500, 32, 20), skyMaterial);
+    envScene.add(dome);
+  } else {
+    const dome = new THREE.Mesh(
+      new THREE.SphereGeometry(500, 24, 16),
+      new THREE.MeshBasicMaterial({ color: skyColor, side: THREE.BackSide }),
+    );
+    envScene.add(dome);
+  }
+
+  // Ground bounce, faded in below the horizon rather than butted against it.
+  // A hard terminator between sky and ground shows up as a visible seam in
+  // every low-roughness reflection, which is exactly where the eye looks.
+  const ground = new THREE.Mesh(
+    new THREE.SphereGeometry(480, 32, 24),
+    new THREE.ShaderMaterial({
+      side: THREE.BackSide, transparent: true, depthWrite: false, depthTest: false, fog: false,
+      uniforms: { uColor: { value: new THREE.Color(groundColor) }, uFade: { value: horizonFade } },
+      vertexShader: 'varying vec3 vP;void main(){vP=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+      fragmentShader: 'uniform vec3 uColor;uniform float uFade;varying vec3 vP;' +
+        'void main(){float d=normalize(vP).y;gl_FragColor=vec4(uColor,smoothstep(0.02,-uFade,d));}',
+    }),
+  );
+  ground.renderOrder = 1;
+  envScene.add(ground);
+
+  const rt = pmrem.fromScene(envScene, 0, 1, 1200);
+  pmrem.dispose();
+  envScene.traverse((o) => { if (o.isMesh && o.material !== skyMaterial) o.material.dispose(); });
+
+  const tex = rt.texture;
+  tex.userData.intensity = intensity;
+  return tex;
+}
+
+/** Point every standard material in a subtree at the probe. */
+function applyEnvironment(root, envMap, intensity = 1) {
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    for (const m of mats) {
+      if (!m || !m.isMeshStandardMaterial) continue;
+      m.envMap = envMap;
+      m.envMapIntensity = intensity;
+      m.needsUpdate = true;
+    }
+  });
+}
+
+/* ============================== colour grading ============================= */
+
+/**
+ * The final pass: HDR in, display-referred sRGB out.
+ *
+ * Tone mapping lives here rather than on the materials so that bloom upstream
+ * operates on genuine HDR values. Everything after the tone map — aberration,
+ * vignette, grain, unsharp mask — is there to imitate a lens and a sensor.
+ */
+const GradeShader = {
+  uniforms: {
+    tDiffuse:    { value: null },
+    exposure:    { value: 1.0 },
+    contrast:    { value: 1.06 },
+    saturation:  { value: 1.05 },
+    vignette:    { value: 0.32 },
+    grain:       { value: 0.035 },
+    aberration:  { value: 0.0016 },
+    sharpen:     { value: 0.35 },
+    lift:        { value: new THREE.Vector3(0.0, 0.0, 0.0) },
+    time:        { value: 0 },
+    texel:       { value: new THREE.Vector2(1 / 1280, 1 / 720) },
+  },
+  vertexShader: /* glsl */`
+    varying vec2 vUv;
+    void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }
+  `,
+  fragmentShader: /* glsl */`
+    uniform sampler2D tDiffuse;
+    uniform float exposure, contrast, saturation, vignette, grain, aberration, sharpen, time;
+    uniform vec3 lift;
+    uniform vec2 texel;
+    varying vec2 vUv;
+
+    // Stephen Hill's fit of the ACES RRT+ODT.
+    const mat3 ACESIn = mat3(
+      0.59719, 0.07600, 0.02840,
+      0.35458, 0.90834, 0.13383,
+      0.04823, 0.01566, 0.83777);
+    const mat3 ACESOut = mat3(
+       1.60475, -0.10208, -0.00327,
+      -0.53108,  1.10813, -0.07276,
+      -0.07367, -0.00605,  1.07602);
+    vec3 rrtOdtFit(vec3 v){
+      vec3 a = v * (v + 0.0245786) - 0.000090537;
+      vec3 b = v * (0.983729 * v + 0.4329510) + 0.238081;
+      return a / b;
+    }
+    vec3 aces(vec3 c){ return clamp(ACESOut * rrtOdtFit(ACESIn * c), 0.0, 1.0); }
+
+    vec3 toSRGB(vec3 c){
+      return mix(c * 12.92, 1.055 * pow(max(c, 1e-5), vec3(1.0/2.4)) - 0.055, step(0.0031308, c));
+    }
+
+    float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+
+    void main(){
+      vec2 uv = vUv;
+      vec2 fromCentre = uv - 0.5;
+      float r2 = dot(fromCentre, fromCentre);
+
+      // Lateral chromatic aberration grows towards the frame edge, as in a real lens.
+      vec3 hdr;
+      if (aberration > 0.0) {
+        vec2 off = fromCentre * aberration * r2 * 4.0;
+        hdr.r = texture2D(tDiffuse, uv + off).r;
+        hdr.g = texture2D(tDiffuse, uv).g;
+        hdr.b = texture2D(tDiffuse, uv - off).b;
+      } else {
+        hdr = texture2D(tDiffuse, uv).rgb;
+      }
+
+      // Unsharp mask on the HDR signal — recovers the micro-contrast that
+      // bloom and tone mapping flatten out.
+      if (sharpen > 0.0) {
+        vec3 blur = (
+          texture2D(tDiffuse, uv + vec2( texel.x, 0.0)).rgb +
+          texture2D(tDiffuse, uv + vec2(-texel.x, 0.0)).rgb +
+          texture2D(tDiffuse, uv + vec2(0.0,  texel.y)).rgb +
+          texture2D(tDiffuse, uv + vec2(0.0, -texel.y)).rgb) * 0.25;
+        hdr += (hdr - blur) * sharpen;
+      }
+
+      vec3 col = aces(max(hdr, 0.0) * exposure);
+
+      col = (col - 0.5) * contrast + 0.5;
+      float luma = dot(col, vec3(0.2126, 0.7152, 0.0722));
+      col = mix(vec3(luma), col, saturation);
+      col += lift * (1.0 - luma);
+
+      col *= 1.0 - vignette * smoothstep(0.10, 0.75, r2);
+
+      // Grain is strongest in the mid-tones, as film and sensors both are.
+      float g = (hash(uv * 1024.0 + fract(time)) - 0.5) * grain;
+      col += g * (1.0 - abs(luma * 2.0 - 1.0));
+
+      gl_FragColor = vec4(toSRGB(clamp(col, 0.0, 1.0)), 1.0);
+    }
+  `,
+};
+
+/* ================================ ambient occlusion ======================= */
+
+/** Minimal full-screen triangle renderer, so the kit needs no Pass import. */
+function fullscreenQuad() {
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute([-1, -1, 0, 3, -1, 0, -1, 3, 0], 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute([0, 0, 2, 0, 0, 2], 2));
+  const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const mesh = new THREE.Mesh(geo, null);
+  const scn = new THREE.Scene();
+  scn.add(mesh);
+  return function draw(renderer, material, target) {
+    mesh.material = material;
+    renderer.setRenderTarget(target || null);
+    renderer.render(scn, cam);
+  };
+}
+
+const AO_COMMON = /* glsl */`
+  uniform highp sampler2D tDepth;
+  uniform mat4 projInv;
+  uniform vec2 texel;
+  float depthAt(vec2 uv){ return texture2D(tDepth, uv).x; }
+  vec3 viewFromDepth(vec2 uv, float d){
+    vec4 clip = vec4(uv * 2.0 - 1.0, d * 2.0 - 1.0, 1.0);
+    vec4 v = projInv * clip;
+    return v.xyz / v.w;
+  }
+`;
+
+/**
+ * Screen-space AO computed from the depth the scene render already produced.
+ *
+ * Three's own SAOPass and SSAOPass were both tried here and rejected: each
+ * re-renders the entire scene one or more extra times per frame (SAOPass does
+ * it twice — a beauty pass it does not even use at this output mode, plus a
+ * depth override), roughly tripling draw calls in a game that has to hold
+ * framerate on a phone. SAOPass also leaves background pixels reading as
+ * near-plane geometry, which multiplies the sky to black.
+ *
+ * This runs as its own pass rather than a plain ShaderPass because occlusion is
+ * computed into a private half-resolution target. Sampling the shared depth
+ * texture while writing into one of the composer's ping-pong buffers — which is
+ * what that texture is attached to — is a framebuffer feedback loop, and the
+ * driver rejects the draw outright. Working off to the side also buys a
+ * depth-aware blur and a 4× cheaper occlusion loop.
+ */
+function createAOPass(renderer, camera, depthTexture, opts = {}) {
+  const {
+    width = 1, height = 1, samples = 16, radius = 0.9,
+    intensity = 1.0, power = 1.6, bias = 0.028, maxRange = 2.2, scale = 0.5,
+  } = opts;
+
+  const draw = fullscreenQuad();
+  const rtOpts = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat, depthBuffer: false };
+  let aw = Math.max(1, Math.floor(width * scale)), ah = Math.max(1, Math.floor(height * scale));
+  const targetA = new THREE.WebGLRenderTarget(aw, ah, rtOpts);
+  const targetB = new THREE.WebGLRenderTarget(aw, ah, rtOpts);
+
+  const occlude = new THREE.ShaderMaterial({
+    defines: { SAMPLES: samples },
+    uniforms: {
+      tDepth: { value: depthTexture },
+      projInv: { value: new THREE.Matrix4() },
+      proj: { value: new THREE.Matrix4() },
+      texel: { value: new THREE.Vector2(1 / aw, 1 / ah) },
+      radius: { value: radius }, intensity: { value: intensity },
+      bias: { value: bias }, power: { value: power }, maxRange: { value: maxRange },
+    },
+    vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position,1.0);}',
+    fragmentShader: AO_COMMON + /* glsl */`
+      uniform mat4 proj;
+      uniform float radius, intensity, bias, power, maxRange;
+      varying vec2 vUv;
+      float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
+
+      void main(){
+        float d = depthAt(vUv);
+        // Far plane: sky, and anything else with no geometry behind it.
+        if (d >= 0.999999) { gl_FragColor = vec4(1.0); return; }
+
+        vec3 P = viewFromDepth(vUv, d);
+
+        // Normal from depth. Take the closer neighbour on each axis so a
+        // silhouette does not smear a false normal across the edge.
+        vec3 pR = viewFromDepth(vUv + vec2(texel.x,0.0), depthAt(vUv + vec2(texel.x,0.0)));
+        vec3 pL = viewFromDepth(vUv - vec2(texel.x,0.0), depthAt(vUv - vec2(texel.x,0.0)));
+        vec3 pU = viewFromDepth(vUv + vec2(0.0,texel.y), depthAt(vUv + vec2(0.0,texel.y)));
+        vec3 pD = viewFromDepth(vUv - vec2(0.0,texel.y), depthAt(vUv - vec2(0.0,texel.y)));
+        vec3 dx = abs(pR.z - P.z) < abs(pL.z - P.z) ? (pR - P) : (P - pL);
+        vec3 dy = abs(pU.z - P.z) < abs(pD.z - P.z) ? (pU - P) : (P - pD);
+        vec3 N = normalize(cross(dx, dy));
+
+        float ang = hash(vUv * 1024.0) * 6.2831853;
+        float occ = 0.0;
+
+        for (int i = 0; i < SAMPLES; i++) {
+          float fi = float(i);
+          float a = fi * 2.3999632 + ang;                       // golden angle
+          float r = radius * sqrt((fi + 0.5) / float(SAMPLES));
+          vec3 dir = normalize(vec3(cos(a), sin(a), 0.35 + 0.65 * hash(vec2(fi, ang))));
+          if (dot(dir, N) < 0.0) dir = -dir;                    // fold into the hemisphere
+
+          vec3 sp = P + dir * r;
+          vec4 clip = proj * vec4(sp, 1.0);
+          vec2 sUv = (clip.xy / clip.w) * 0.5 + 0.5;
+          if (sUv.x < 0.0 || sUv.x > 1.0 || sUv.y < 0.0 || sUv.y > 1.0) continue;
+
+          float sd = depthAt(sUv);
+          if (sd >= 0.999999) continue;
+          // View space looks down -Z, so a greater z is nearer the camera.
+          float diff = viewFromDepth(sUv, sd).z - sp.z;
+          if (diff > bias) occ += smoothstep(1.0, 0.0, (diff - bias) / maxRange);
+        }
+
+        float ao = pow(clamp(1.0 - (occ / float(SAMPLES)) * intensity, 0.0, 1.0), power);
+        gl_FragColor = vec4(ao, ao, ao, 1.0);
+      }
+    `,
+  });
+
+  // Separable blur that refuses to cross a depth discontinuity, so occlusion
+  // does not bleed from a near object onto the distant surface behind it.
+  const blur = new THREE.ShaderMaterial({
+    uniforms: {
+      tAO: { value: null }, tDepth: { value: depthTexture },
+      projInv: { value: occlude.uniforms.projInv.value },
+      texel: { value: new THREE.Vector2(1 / aw, 1 / ah) },
+      dir: { value: new THREE.Vector2(1, 0) },
+    },
+    vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position,1.0);}',
+    fragmentShader: AO_COMMON + /* glsl */`
+      uniform sampler2D tAO;
+      uniform vec2 dir;
+      varying vec2 vUv;
+      void main(){
+        float centre = viewFromDepth(vUv, depthAt(vUv)).z;
+        float sum = 0.0, wsum = 0.0;
+        for (int i = -3; i <= 3; i++) {
+          vec2 uv = vUv + dir * texel * float(i);
+          float z = viewFromDepth(uv, depthAt(uv)).z;
+          float w = exp(-float(i * i) * 0.18) * step(abs(z - centre), 0.6);
+          sum += texture2D(tAO, uv).r * w;
+          wsum += w;
+        }
+        float v = wsum > 0.0 ? sum / wsum : texture2D(tAO, vUv).r;
+        gl_FragColor = vec4(v, v, v, 1.0);
+      }
+    `,
+  });
+
+  const apply = new THREE.ShaderMaterial({
+    uniforms: { tDiffuse: { value: null }, tAO: { value: targetA.texture } },
+    vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position,1.0);}',
+    fragmentShader: /* glsl */`
+      uniform sampler2D tDiffuse, tAO;
+      varying vec2 vUv;
+      void main(){
+        vec4 src = texture2D(tDiffuse, vUv);
+        gl_FragColor = vec4(src.rgb * texture2D(tAO, vUv).r, src.a);
+      }
+    `,
+  });
+
+  // Duck-typed Pass: EffectComposer only needs these members.
+  return {
+    enabled: true, needsSwap: true, clear: false, renderToScreen: false,
+    uniforms: occlude.uniforms,
+    render(r, writeBuffer, readBuffer) {
+      occlude.uniforms.proj.value.copy(camera.projectionMatrix);
+      occlude.uniforms.projInv.value.copy(camera.projectionMatrixInverse);
+
+      draw(r, occlude, targetA);
+      blur.uniforms.tAO.value = targetA.texture;
+      blur.uniforms.dir.value.set(1, 0);
+      draw(r, blur, targetB);
+      blur.uniforms.tAO.value = targetB.texture;
+      blur.uniforms.dir.value.set(0, 1);
+      draw(r, blur, targetA);
+
+      apply.uniforms.tDiffuse.value = readBuffer.texture;
+      draw(r, apply, this.renderToScreen ? null : writeBuffer);
+    },
+    setSize(w, h) {
+      aw = Math.max(1, Math.floor(w * scale));
+      ah = Math.max(1, Math.floor(h * scale));
+      targetA.setSize(aw, ah);
+      targetB.setSize(aw, ah);
+      occlude.uniforms.texel.value.set(1 / aw, 1 / ah);
+      blur.uniforms.texel.value.set(1 / aw, 1 / ah);
+    },
+    dispose() { targetA.dispose(); targetB.dispose(); occlude.dispose(); blur.dispose(); apply.dispose(); },
+  };
+}
+
+/* ============================== render pipeline =========================== */
+
+/**
+ * Assemble the post chain. Pass the addon classes in, so this module needs no
+ * imports of its own and can be inlined into any of the games.
+ *
+ *   deps: { EffectComposer, RenderPass, ShaderPass, UnrealBloomPass, SMAAPass }
+ *
+ * Order matters: AO and bloom act on linear HDR, the grade tone-maps to sRGB,
+ * and SMAA runs last because edge detection wants perceptual values.
+ */
+function buildPipeline(renderer, scene, camera, deps, opts = {}) {
+  const { EffectComposer, RenderPass, ShaderPass, UnrealBloomPass, SMAAPass } = deps;
+  const {
+    ao = true, aoRadius = 0.9, aoIntensity = 1.0, aoSamples = 16, aoPower = 1.6, aoScale = 0.5,
+    bloom = true, bloomStrength = 0.42, bloomRadius = 0.75, bloomThreshold = 1.05,
+    smaa = true, exposure = 1.0, grade = {},
+  } = opts;
+
+  const size = renderer.getDrawingBufferSize(new THREE.Vector2());
+  const w = Math.max(1, size.x), h = Math.max(1, size.y);
+
+  // Tone mapping is the grade pass's job; keep the scene linear until then.
+  renderer.toneMapping = THREE.NoToneMapping;
+
+  // EffectComposer's default render target is UnsignedByteType, which clamps
+  // every value at 1.0 — bloom would find no highlights above threshold and the
+  // tone mapper would receive an already-crushed image. Give it half-float so
+  // the chain is genuinely high dynamic range.
+  const hdrTarget = new THREE.WebGLRenderTarget(w, h, {
+    type: THREE.HalfFloatType,
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.LinearFilter,
+    format: THREE.RGBAFormat,
+  });
+
+  const composer = new EffectComposer(renderer, hdrTarget);
+  composer.addPass(new RenderPass(scene, camera));
+
+  let depthTexture = null, aoPass = null;
+  if (ao) {
+    // One depth texture shared by both ping-pong targets: whichever one the
+    // RenderPass happened to draw into, the depth lands here. Safe only because
+    // the AO pass runs immediately afterwards, before any full-screen pass has
+    // had a chance to clear it.
+    depthTexture = new THREE.DepthTexture(w, h);
+    depthTexture.type = THREE.UnsignedIntType;
+    composer.renderTarget1.depthTexture = depthTexture;
+    composer.renderTarget2.depthTexture = depthTexture;
+
+    aoPass = createAOPass(renderer, camera, depthTexture, {
+      width: w, height: h, samples: aoSamples,
+      radius: aoRadius, intensity: aoIntensity, power: aoPower, scale: aoScale,
+    });
+    composer.addPass(aoPass);
+  }
+
+  let bloomPass = null;
+  if (bloom && UnrealBloomPass) {
+    bloomPass = new UnrealBloomPass(new THREE.Vector2(w, h), bloomStrength, bloomRadius, bloomThreshold);
+    composer.addPass(bloomPass);
+  }
+
+  const gradePass = new ShaderPass(GradeShader);
+  gradePass.uniforms.exposure.value = exposure;
+  for (const [k, v] of Object.entries(grade)) {
+    if (gradePass.uniforms[k]) gradePass.uniforms[k].value = v;
+  }
+  gradePass.uniforms.texel.value.set(1 / w, 1 / h);
+  composer.addPass(gradePass);
+
+  let smaaPass = null;
+  if (smaa && SMAAPass) {
+    smaaPass = new SMAAPass(w, h);
+    composer.addPass(smaaPass);
+  }
+
+  return {
+    composer, gradePass, bloomPass, aoPass, smaaPass, depthTexture,
+    /** Call once per frame: animates grain and refreshes the AO projection. */
+    update(t) {
+      gradePass.uniforms.time.value = t;
+      // the AO pass refreshes its own projection matrices at render time
+    },
+    setExposure(v) { gradePass.uniforms.exposure.value = v; },
+    setSize(width, height) {
+      composer.setSize(width, height);
+      const pr = renderer.getPixelRatio();
+      const dw = Math.max(1, Math.floor(width * pr)), dh = Math.max(1, Math.floor(height * pr));
+      gradePass.uniforms.texel.value.set(1 / dw, 1 / dh);
+      if (depthTexture) {
+        depthTexture.image.width = dw;
+        depthTexture.image.height = dh;
+        depthTexture.needsUpdate = true;
+        aoPass.setSize(dw, dh);
+      }
+      if (bloomPass) bloomPass.setSize(width, height);
+      if (smaaPass) smaaPass.setSize(width, height);
+    },
+  };
+}
+
+/**
+ * Shadow settings that hold up close-in. A tight frustum is worth far more
+ * than a big map: halving the covered area doubles effective resolution.
+ */
+function tuneShadows(light, { size = 2048, extent = 90, near = 1, far = 400, bias = -0.0004, normalBias = 0.02 } = {}) {
+  light.castShadow = true;
+  light.shadow.mapSize.set(size, size);
+  light.shadow.camera.left = -extent;
+  light.shadow.camera.right = extent;
+  light.shadow.camera.top = extent;
+  light.shadow.camera.bottom = -extent;
+  light.shadow.camera.near = near;
+  light.shadow.camera.far = far;
+  light.shadow.bias = bias;
+  light.shadow.normalBias = normalBias;
+  light.shadow.camera.updateProjectionMatrix();
+  return light;
+}
+
+return { metalPanels, roughSurface, fabric, wood, skin, skyEnvironment, applyEnvironment, GradeShader, createAOPass, buildPipeline, tuneShadows };
+})();
+/* === END photoreal kit === */
+
+/* ============================== UTILS ============================== */
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const rand=(a,b)=>a+Math.random()*(b-a);
+const TAU=Math.PI*2, G=9.81, FIELD=1200; // half-size of playable field
+function hash2(x,z){const n=Math.sin(x*127.1+z*311.7)*43758.5453;return n-Math.floor(n);}
+function vnoise(x,z){
+  const xi=Math.floor(x),zi=Math.floor(z),xf=x-xi,zf=z-zi;
+  const u=xf*xf*(3-2*xf),v=zf*zf*(3-2*zf);
+  return lerp(lerp(hash2(xi,zi),hash2(xi+1,zi),u),lerp(hash2(xi,zi+1),hash2(xi+1,zi+1),u),v);
+}
+function fbm(x,z){let a=0,amp=.5,f=1;for(let i=0;i<4;i++){a+=vnoise(x*f,z*f)*amp;amp*=.5;f*=2;}return a/0.9375;}
+function groundH(x,z){
+  let h=(fbm(x*0.0011+7.3,z*0.0011+2.1)-0.5)*150;
+  h+=Math.sin(x*0.0016)*Math.cos(z*0.0019)*22;
+  const d=Math.hypot(x-40,z-380); // flatten player spawn sector
+  const flat=clamp((d-90)/320,0,1);
+  return h*flat+(fbm(x*0.01,z*0.01)-0.5)*4*(1-flat)+2;
+}
+function groundSlope(x,z){
+  const e=3;
+  return {px:(groundH(x+e,z)-groundH(x-e,z))/(2*e), pz:(groundH(x,z+e)-groundH(x,z-e))/(2*e)};
+}
+
+/* ============================== AUDIO ============================== */
+const AudioSys={ctx:null,master:null,engOsc:null,engGain:null,noiseBuf:null,
+  init(){
+    this.ctx=new (window.AudioContext||window.webkitAudioContext)();
+    this.master=this.ctx.createGain();this.master.gain.value=0.55;this.master.connect(this.ctx.destination);
+    const len=this.ctx.sampleRate*1.2,buf=this.ctx.createBuffer(1,len,this.ctx.sampleRate),d=buf.getChannelData(0);
+    for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
+    this.noiseBuf=buf;
+    // engine rumble
+    const o1=this.ctx.createOscillator(),o2=this.ctx.createOscillator();
+    o1.type="sawtooth";o2.type="square";
+    const lp=this.ctx.createBiquadFilter();lp.type="lowpass";lp.frequency.value=160;
+    this.engGain=this.ctx.createGain();this.engGain.gain.value=0;
+    o1.connect(lp);o2.connect(lp);lp.connect(this.engGain);this.engGain.connect(this.master);
+    o1.start();o2.start();this.engOsc={o1,o2};
+  },
+  engine(speed,throttle){
+    if(!this.ctx)return;
+    const f=34+Math.abs(speed)*3.2+throttle*8;
+    this.engOsc.o1.frequency.setTargetAtTime(f,this.ctx.currentTime,.05);
+    this.engOsc.o2.frequency.setTargetAtTime(f*0.5+2,this.ctx.currentTime,.05);
+    this.engGain.gain.setTargetAtTime(clamp(0.03+Math.abs(throttle)*0.10,0,0.2),this.ctx.currentTime,.08);
+  },
+  boom(dist,vol=1){
+    if(!this.ctx)return;const t=this.ctx.currentTime;
+    const src=this.ctx.createBufferSource();src.buffer=this.noiseBuf;
+    const lp=this.ctx.createBiquadFilter();lp.type="lowpass";
+    lp.frequency.setValueAtTime(900,t);lp.frequency.exponentialRampToValueAtTime(50,t+0.7);
+    const g=this.ctx.createGain();const v=vol*1.2/(1+dist/260);
+    g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.9);
+    src.connect(lp);lp.connect(g);g.connect(this.master);src.start(t,Math.random(),1.1);
+    const o=this.ctx.createOscillator();o.type="sine";
+    o.frequency.setValueAtTime(58,t);o.frequency.exponentialRampToValueAtTime(24,t+0.5);
+    const og=this.ctx.createGain();og.gain.setValueAtTime(v*0.9,t);og.gain.exponentialRampToValueAtTime(0.001,t+0.6);
+    o.connect(og);og.connect(this.master);o.start(t);o.stop(t+0.7);
+  },
+  shot(dist){
+    if(!this.ctx)return;const t=this.ctx.currentTime;
+    const src=this.ctx.createBufferSource();src.buffer=this.noiseBuf;
+    const bp=this.ctx.createBiquadFilter();bp.type="bandpass";bp.frequency.value=1400;bp.Q.value=0.6;
+    const g=this.ctx.createGain();const v=clamp(0.5/(1+dist/320),0,0.6);
+    g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.28);
+    src.connect(bp);bp.connect(g);g.connect(this.master);src.start(t,Math.random(),0.3);
+  },
+  mg(dist){
+    if(!this.ctx)return;const t=this.ctx.currentTime;
+    const src=this.ctx.createBufferSource();src.buffer=this.noiseBuf;
+    const hp=this.ctx.createBiquadFilter();hp.type="highpass";hp.frequency.value=900;
+    const g=this.ctx.createGain();const v=clamp(0.16/(1+dist/400),0,0.2);
+    g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.07);
+    src.connect(hp);hp.connect(g);g.connect(this.master);src.start(t,Math.random(),0.08);
+  },
+};
+
+/* ============================== MOBILE QUALITY / HAPTICS ============================== */
+// Everything below the renderer reads from Q, so the whole scene budget is one switch.
+// The choice is persisted and applied at load — changing it on the start screen reloads the page.
+// Screen-space AO and SMAA are each a full-screen pass at native resolution;
+// on a mid-range phone they are the difference between 60 and 30 fps, so only
+// the high preset pays for them. The light probe is a one-off cost at load and
+// stays on everywhere — it is what stops the armour looking like plastic.
+const QUALITY_PRESETS={
+  low :{pixelRatio:0.70,shadows:true ,softShadows:false,shadowMap:1024,terrainSeg:110,trees:[90 ,80 ],grass:900 ,bloom:false,ao:false,smaa:false,hudInterval:0.14},
+  med :{pixelRatio:0.95,shadows:true ,softShadows:true ,shadowMap:1536,terrainSeg:140,trees:[130,115],grass:2000,bloom:true ,ao:false,smaa:false,hudInterval:0.10},
+  high:{pixelRatio:1.30,shadows:true ,softShadows:true ,shadowMap:2048,terrainSeg:170,trees:[170,150],grass:3800,bloom:true ,ao:true ,smaa:true ,hudInterval:0.08}
+};
+function store(k,d){try{const v=localStorage.getItem(k);return v===null?d:v;}catch(e){return d;}}
+function storeSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+let qualityName=store("tb_quality","med");
+if(!QUALITY_PRESETS[qualityName])qualityName="med";
+const Q=QUALITY_PRESETS[qualityName];
+let aimSens=parseFloat(store("tb_sens","1"))||1;
+function haptic(pattern){try{navigator.vibrate&&navigator.vibrate(pattern);}catch(e){}}
+
+/* ============================== SCENE ============================== */
+const canvas=document.getElementById("gl");
+const renderer=new THREE.WebGLRenderer({canvas,antialias:false,powerPreference:"high-performance"});
+renderer.setPixelRatio(Math.min(devicePixelRatio,Q.pixelRatio));
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=Q.shadows;renderer.shadowMap.type=Q.softShadows?THREE.PCFSoftShadowMap:THREE.PCFShadowMap;
+// outputEncoding was removed in r152 and had been silently doing nothing here.
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+// The grade pass tone-maps at the end of the chain, so the scene stays linear.
+renderer.toneMapping=THREE.NoToneMapping;
+
+const scene=new THREE.Scene();
+const SKY=0x9db8cc;
+scene.background=new THREE.Color(SKY);
+scene.fog=new THREE.Fog(SKY,300,2300);
+const timeU={value:0}; // shared global-time uniform (sky clouds + grass wind)
+
+/* ---------- procedural sky dome (gradient + sun + drifting clouds) ---------- */
+const skyMat=new THREE.ShaderMaterial({
+  uniforms:{uTime:timeU,uSunDir:{value:new THREE.Vector3(-320,420,-180).normalize()}},
+  side:THREE.BackSide,depthWrite:false,fog:false,
+  vertexShader:`varying vec3 vW;void main(){vW=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(vW,1.);}`,
+  fragmentShader:`
+uniform vec3 uSunDir;uniform float uTime;varying vec3 vW;
+float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+ return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}
+float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<5;i++){v+=a*noise(p);p*=2.03;a*=.5;}return v;}
+void main(){
+ vec3 dir=normalize(vW-cameraPosition);
+ float h=dir.y;
+ vec3 hor=vec3(.40,.53,.63),zen=vec3(.10,.24,.50);
+ vec3 col=mix(hor,zen,1.-exp(-max(h,0.)*3.2));
+ if(h<0.)col=mix(hor,hor*vec3(.80,.78,.76),clamp(-h*4.,0.,1.));
+ float sd=max(dot(dir,uSunDir),0.);
+ col+=vec3(1.25,1.08,.82)*(pow(sd,900.)*4.+pow(sd,64.)*.22+pow(sd,8.)*.06);
+ col+=vec3(.95,.58,.28)*pow(sd,3.)*smoothstep(.28,0.,h)*.2; // warm forward scatter low around the sun
+ if(h>0.01){
+  vec2 uv=dir.xz/(h+.12)*.5;
+  float cov=smoothstep(.30,.78,fbm(uv*.4+7.3));
+  float n=fbm(uv*2.2+vec2(uTime*.008,uTime*.003));
+  float a=smoothstep(.42,.7,n)*cov*smoothstep(.01,.12,h);
+  vec3 cc=mix(vec3(.58,.60,.65),vec3(1.06,1.04,1.),clamp(pow(sd,2.)*.9+h*.5+fbm(uv*1.7)*.3,0.,1.));
+  // cloud self-shadowing: offset density sample along sun dir darkens the lee side
+  float sh=smoothstep(.32,.78,fbm(uv*2.2-vec2(uTime*.008,uTime*.003)+uSunDir.xz*1.6));
+  cc=mix(cc*vec3(.52,.55,.62),cc,sh);
+  col=mix(col,cc,clamp(a,0.,.85));
+  // high cirrus streaks
+  float ci=fbm(vec2(uv.x*3.5,uv.y*.6)+vec2(uTime*.015,0.));
+  vec3 cw=mix(vec3(.78,.84,.9),vec3(1.05,1.,.98),clamp(pow(sd,4.)*.7+.3,0.,1.));
+  col=mix(col,cw,smoothstep(.55,.82,ci)*smoothstep(.15,.5,h)*.5);
+ }
+ // horizon haze toward fog color
+ col=mix(col,vec3(.62,.72,.80),smoothstep(.14,-.02,h)*.55);
+ gl_FragColor=vec4(col,1.);
+}`});
+const sky=new THREE.Mesh(new THREE.SphereGeometry(2400,32,16),skyMat);
+sky.userData.skipAO=true;   // a dome in the AO depth prepass reads as a wall
+sky.frustumCulled=false;scene.add(sky);
+
+// Image-based lighting from the same shader that draws the horizon. One PMREM
+// bake at load, then free for the rest of the session — cheap enough for a
+// phone and the single biggest step away from flat paint.
+scene.environment=PR.skyEnvironment(renderer,{
+  skyMaterial:skyMat.clone(),
+  groundColor:0x6a5f47,
+  horizonFade:0.30,
+});
+if('environmentIntensity' in scene) scene.environmentIntensity=1.0;
+
+const camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,0.1,3000);
+camera.position.set(0,8,20);
+
+const hemi=new THREE.HemisphereLight(0xcfe4ff,0x5a5240,0.22);scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xfff2d8,1.35);
+sun.position.set(-320,420,-180);sun.castShadow=true;
+sun.shadow.mapSize.set(Q.shadowMap,Q.shadowMap);
+sun.shadow.camera.left=-130;sun.shadow.camera.right=130;
+sun.shadow.camera.top=130;sun.shadow.camera.bottom=-130;
+sun.shadow.camera.far=900;sun.shadow.bias=-0.0006;
+scene.add(sun);scene.add(sun.target);
+
+/* ---------- terrain ---------- */
+const TERR=2400,SEG=Q.terrainSeg;
+function groundTex(){ // tiling dirt/grass micro-detail
+  const c=document.createElement("canvas");c.width=c.height=256;const g=c.getContext("2d");
+  g.fillStyle="#8a8f74";g.fillRect(0,0,256,256);
+  for(let i=0;i<9000;i++){
+    const x=Math.random()*256,y=Math.random()*256,t=Math.random();
+    g.fillStyle=t<.5?`rgba(70,90,45,${Math.random()*.5})`:t<.8?`rgba(150,140,95,${Math.random()*.4})`:`rgba(90,75,55,${Math.random()*.35})`;
+    g.fillRect(x,y,rand(1,2.6),rand(1,2.6));
+  }
+  for(let i=0;i<26;i++){ // worn dirt patches
+    const x=Math.random()*256,y=Math.random()*256,r=rand(8,30);
+    g.globalAlpha=rand(.06,.16);g.fillStyle="#7a6f58";
+    g.beginPath();g.ellipse(x,y,r,r*rand(.4,.9),rand(0,3),0,TAU);g.fill();
+  }
+  g.globalAlpha=1;
+  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(80,80);t.anisotropy=4;return t;
+}
+const GROUND_TEX=groundTex();
+(function buildTerrain(){
+  const geo=new THREE.PlaneGeometry(TERR,TERR,SEG,SEG);
+  geo.rotateX(-Math.PI/2);
+  const pos=geo.attributes.position,col=[];
+  const cLow=new THREE.Color(0x5d7a3a),cMid=new THREE.Color(0x8a8a4e),cHigh=new THREE.Color(0xb8ab86),cRock=new THREE.Color(0x6e6257);
+  for(let i=0;i<pos.count;i++){
+    const x=pos.getX(i),z=pos.getZ(i),h=groundH(x,z);
+    pos.setY(i,h);
+    const s=groundSlope(x,z),sl=Math.hypot(s.px,s.pz);
+    let c=cLow.clone().lerp(cMid,clamp((h+40)/90,0,1)).lerp(cHigh,clamp((h-20)/70,0,1));
+    c.lerp(cRock,clamp((sl-0.35)/0.4,0,1)*0.8);
+    const n=(fbm(x*0.05,z*0.05)-0.5)*0.08;c.offsetHSL(0,0,n);
+    // baked ambient occlusion: darken concave hollows, lift convex ridges
+    const avg=(groundH(x+5,z)+groundH(x-5,z)+groundH(x,z+5)+groundH(x,z-5))*0.25;
+    if(avg>h)c.multiplyScalar(1-clamp((avg-h)*0.05,0,0.3));else c.multiplyScalar(1+clamp((h-avg)*0.02,0,0.07));
+    col.push(c.r,c.g,c.b);
+  }
+  geo.setAttribute("color",new THREE.Float32BufferAttribute(col,3));
+  geo.computeVertexNormals();
+  // A bump map derived from the albedo cannot describe a slope it has no
+  // luminance cue for; a proper tangent-space normal map can.
+  const groundDetail=PR.roughSurface({size:Q.pixelRatio<1?256:512,color:'#8a7f66',grit:0.5,crack:0.2,stain:0.3,roughBase:0.95,seed:17,repeat:200});
+  const mat=new THREE.MeshStandardMaterial({
+    vertexColors:true,roughness:1,metalness:0,map:GROUND_TEX,
+    normalMap:groundDetail.normalMap,normalScale:new THREE.Vector2(0.14,0.14),
+    roughnessMap:groundDetail.roughnessMap,envMapIntensity:0.9,
+  });
+  const terrainMesh=new THREE.Mesh(geo,mat);terrainMesh.receiveShadow=true;scene.add(terrainMesh);
+})();
+
+/* ---------- props: trees / rocks / villages ---------- */
+function smokeTex(){ // radial soft sprite
+  const c=document.createElement("canvas");c.width=c.height=64;const g=c.getContext("2d");
+  const gr=g.createRadialGradient(32,32,2,32,32,30);
+  gr.addColorStop(0,"rgba(255,255,255,1)");gr.addColorStop(1,"rgba(255,255,255,0)");
+  g.fillStyle=gr;g.fillRect(0,0,64,64);return new THREE.CanvasTexture(c);
+}
+const SOFT_TEX=smokeTex();
+
+(function buildProps(){
+  // trees — two species (conifer stacks / broadleaf blobs), clumped by noise, per-instance color
+  const m=new THREE.Matrix4(),q=new THREE.Quaternion(),s=new THREE.Vector3(),p=new THREE.Vector3();
+  const cc=new THREE.Color();
+  const treeMat=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,flatShading:true});
+  function mkInst(geo,N){const im=new THREE.InstancedMesh(geo,treeMat,N);im.castShadow=true;scene.add(im);return im;}
+  // conifer parts (pre-translated so scale-1 = full tree from ground up)
+  const cTrunkG=new THREE.CylinderGeometry(0.28,0.45,3,6);cTrunkG.translate(0,1.5,0);
+  const cC1G=new THREE.ConeGeometry(2.7,4.4,7);cC1G.translate(0,4.0,0);
+  const cC2G=new THREE.ConeGeometry(2.05,3.8,7);cC2G.translate(0,6.3,0);
+  const cC3G=new THREE.ConeGeometry(1.35,3.1,7);cC3G.translate(0,8.4,0);
+  // broadleaf parts
+  const dTrunkG=new THREE.CylinderGeometry(0.3,0.5,4.2,6);dTrunkG.translate(0,2.1,0);
+  const dCanG=new THREE.IcosahedronGeometry(2.7,1);dCanG.scale(1,.82,1);dCanG.translate(0,5.6,0);
+  const dCan2G=new THREE.IcosahedronGeometry(1.7,1);dCan2G.scale(1,.8,1);dCan2G.translate(1.1,6.9,0.6);
+  const NC=Q.trees[0],ND=Q.trees[1];
+  const cParts=[cTrunkG,cC1G,cC2G,cC3G].map(gg=>mkInst(gg,NC));
+  const dParts=[dTrunkG,dCanG,dCan2G].map(gg=>mkInst(gg,ND));
+  let pc=0,pd=0,tries=0;
+  while((pc<NC||pd<ND)&&tries<5000){
+    tries++;
+    const x=rand(-1150,1150),z=rand(-1150,1150);
+    if(Math.hypot(x-40,z-380)<130)continue;
+    const h=groundH(x,z),sl=groundSlope(x,z);
+    if(Math.hypot(sl.px,sl.pz)>0.7)continue;
+    const conifer=fbm(x*0.012+3.7,z*0.012+8.2)>0.52; // species clumps
+    if((conifer&&pc>=NC)||(!conifer&&pd>=ND))continue;
+    const sc=rand(0.7,1.6);
+    q.setFromEuler(new THREE.Euler(rand(-.04,.04),rand(0,TAU),rand(-.04,.04)));
+    p.set(x,h-0.1,z);s.set(sc,sc*rand(.9,1.25),sc);m.compose(p,q,s);
+    if(conifer){
+      for(const im of cParts)im.setMatrixAt(pc,m);
+      cc.setHSL(0.07+rand(-.02,.02),.4,rand(.16,.24));cParts[0].setColorAt(pc,cc);
+      const hh=rand(.28,.36),ss=rand(.35,.55),ll=rand(.2,.3);
+      for(let k=1;k<4;k++){cc.setHSL(hh+rand(-.03,.03),ss,ll+rand(-.02,.02));cParts[k].setColorAt(pc,cc);}
+      pc++;
+    }else{
+      for(const im of dParts)im.setMatrixAt(pd,m);
+      cc.setHSL(0.07+rand(-.02,.02),.45,rand(.18,.26));dParts[0].setColorAt(pd,cc);
+      const hh=rand(.2,.3),ss=rand(.45,.6),ll=rand(.26,.4);
+      for(let k=1;k<3;k++){cc.setHSL(hh+rand(-.04,.04),ss,ll+rand(-.03,.03));dParts[k].setColorAt(pd,cc);}
+      pd++;
+    }
+  }
+  cParts.forEach(im=>im.count=pc);dParts.forEach(im=>im.count=pd);
+  // rocks (per-instance tone variation)
+  const rockGeo=new THREE.DodecahedronGeometry(1.6,0);
+  const rockDetail=PR.roughSurface({size:256,color:'#ffffff',grit:0.9,crack:0.55,stain:0.2,roughBase:0.96,seed:37,repeat:2});
+  const rockMat=new THREE.MeshStandardMaterial({
+    color:0xffffff,roughness:1,flatShading:true,
+    normalMap:rockDetail.normalMap,normalScale:new THREE.Vector2(0.9,0.9),envMapIntensity:0.85,
+  });
+  const rocks=new THREE.InstancedMesh(rockGeo,rockMat,90);
+  for(let i=0;i<90;i++){
+    const x=rand(-1150,1150),z=rand(-1150,1150),h=groundH(x,z),sc=rand(0.4,2.2);
+    p.set(x,h+0.4*sc,z);s.set(sc,sc*rand(.6,1),sc);q.setFromEuler(new THREE.Euler(rand(0,3),rand(0,3),0));
+    m.compose(p,q,s);rocks.setMatrixAt(i,m);
+    cc.setHSL(rand(.05,.12),rand(.08,.2),rand(.3,.45));rocks.setColorAt(i,cc);
+  }
+  rocks.castShadow=true;scene.add(rocks);
+  // villages — windowed facades + pitched roofs
+  function winTex(base){
+    const c=document.createElement("canvas");c.width=c.height=128;const g=c.getContext("2d");
+    g.fillStyle=base;g.fillRect(0,0,128,128);
+    for(let i=0;i<50;i++){g.globalAlpha=rand(.03,.08);g.fillStyle=Math.random()<.5?"#000":"#fff";g.fillRect(rand(0,128),rand(0,128),rand(1,4),rand(4,40));}
+    g.globalAlpha=1;
+    for(let wy=8;wy<120;wy+=26)for(let wx=8;wx<120;wx+=26){
+      g.fillStyle=Math.random()<.8?"#39424c":"#5a6672";
+      g.fillRect(wx,wy,16,18);
+      g.fillStyle="rgba(255,255,255,.15)";g.fillRect(wx,wy,16,3);
+    }
+    const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;
+  }
+  const winA=winTex("#9a8f7a"),winB=winTex("#7d7468");
+  const roofMatA=new THREE.MeshStandardMaterial({color:0x5a4638,roughness:1});
+  const roofMatB=new THREE.MeshStandardMaterial({color:0x4c4238,roughness:1});
+  function village(cx,cz){
+    for(let i=0;i<9;i++){
+      const w=rand(7,15),hgt=rand(3.5,7),d=rand(7,15);
+      const x=cx+rand(-60,60),z=cz+rand(-60,60),gy=groundH(x,z);
+      const t=(Math.random()<.5?winA:winB).clone();t.needsUpdate=true;
+      t.repeat.set(Math.max(1,Math.round(w/9)),Math.max(1,Math.round(hgt/7)));
+      const b=new THREE.Mesh(new THREE.BoxGeometry(w,hgt,d),new THREE.MeshStandardMaterial({map:t,roughness:1}));
+      b.position.set(x,gy+hgt/2-0.4,z);b.rotation.y=rand(0,TAU);
+      b.castShadow=b.receiveShadow=true;scene.add(b);
+      const rh=rand(1.6,3);
+      const roof=new THREE.Mesh(new THREE.ConeGeometry(Math.max(w,d)*1.02,rh,4),Math.random()<.5?roofMatA:roofMatB);
+      roof.position.set(x,gy+hgt-0.4+rh/2-0.1,z);roof.rotation.y=b.rotation.y+Math.PI/4;
+      roof.castShadow=true;scene.add(roof);
+    }
+    const tx=cx+rand(-30,30),tz=cz+rand(-30,30),gy=groundH(tx,tz);
+    const tw=new THREE.Mesh(new THREE.CylinderGeometry(2.4,2.4,9,10),roofMatB);
+    tw.position.set(tx,gy+4.5,tz);tw.castShadow=true;scene.add(tw);
+    const cap=new THREE.Mesh(new THREE.ConeGeometry(3,2,10),roofMatA);
+    cap.position.set(tx,gy+9.8,tz);scene.add(cap);
+  }
+  village(620,-480);village(-640,520);village(300,700);
+})();
+
+/* ---------- instanced wind-blown grass tufts ---------- */
+(function buildGrass(){
+  const hh=1.0,w=0.3;
+  const P=[],Nn=[],I=[];
+  function quad(yaw){
+    const c=Math.cos(yaw),s=Math.sin(yaw),base=P.length/3;
+    for(const [px,py] of [[-w,0],[w,0],[w,hh],[-w,hh]]){
+      P.push(px*c,py,-px*s);
+    }
+    for(let k=0;k<4;k++)Nn.push(s,0,c);
+    I.push(base,base+1,base+2,base,base+2,base+3);
+  }
+  quad(0.6);quad(2.1);quad(3.7); // three crossed blades per tuft
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute("position",new THREE.Float32BufferAttribute(P,3));
+  geo.setAttribute("normal",new THREE.Float32BufferAttribute(Nn,3));
+  geo.setIndex(I);
+  const mat=new THREE.MeshLambertMaterial({side:THREE.DoubleSide});
+  mat.onBeforeCompile=sh=>{
+    sh.uniforms.uTime=timeU;
+    sh.vertexShader="uniform float uTime;\n"+sh.vertexShader.replace("#include <begin_vertex>","#include <begin_vertex>\n      {\n       float wt=clamp(transformed.y/"+hh.toFixed(1)+",0.,1.);wt*=wt;\n       float ph=instanceMatrix[3][0]*.43+instanceMatrix[3][2]*.37;\n       transformed.x+=sin(uTime*2.1+ph)*.18*wt;\n       transformed.z+=cos(uTime*1.6+ph*1.3)*.08*wt;\n      }");
+  };
+  const N=Q.grass;
+  const grass=new THREE.InstancedMesh(geo,mat,N);
+  const m=new THREE.Matrix4(),q=new THREE.Quaternion(),sv=new THREE.Vector3(),pv=new THREE.Vector3();
+  const cA=new THREE.Color(0x5d7a33),cB=new THREE.Color(0x9a9448),cc=new THREE.Color();
+  let placed=0,tries=0;
+  while(placed<N&&tries<26000){
+    tries++;
+    const x=rand(-1150,1150),z=rand(-1150,1150);
+    const h=groundH(x,z),sl=groundSlope(x,z);
+    if(Math.hypot(sl.px,sl.pz)>0.4)continue;
+    if(fbm(x*0.02+9.7,z*0.02-3.1)<0.42)continue; // clumpy patches, not carpet
+    const sc=rand(0.5,1.3);
+    pv.set(x,h-0.05,z);sv.set(sc,sc*rand(.8,1.5),sc);
+    q.setFromEuler(new THREE.Euler(0,rand(0,TAU),0));m.compose(pv,q,sv);
+    grass.setMatrixAt(placed,m);
+    cc.copy(cA).lerp(cB,clamp((h+30)/120,0,1)).offsetHSL(0,0,rand(-.04,.06));
+    grass.setColorAt(placed,cc);
+    placed++;
+  }
+  grass.count=placed;grass.frustumCulled=false;grass.receiveShadow=true;
+  scene.add(grass);
+})();
+
+/* ---------- distant mountain silhouette ring ---------- */
+(function buildMountains(){
+  const geo=new THREE.ConeGeometry(1,1,5);geo.translate(0,0.5,0);
+  const mat=new THREE.MeshStandardMaterial({roughness:1,flatShading:true});
+  const N=26,mtn=new THREE.InstancedMesh(geo,mat,N);
+  const m=new THREE.Matrix4(),q=new THREE.Quaternion(),s=new THREE.Vector3(),p=new THREE.Vector3();
+  const cA=new THREE.Color(0x46584e),cB=new THREE.Color(0x5d6a72),cc=new THREE.Color();
+  for(let i=0;i<N;i++){
+    const a=i/N*TAU+rand(-.1,.1),r=rand(1500,2100);
+    const x=Math.cos(a)*r,z=Math.sin(a)*r;
+    p.set(x,groundH(x,z)-6,z);
+    const wid=rand(240,460);s.set(wid/2,rand(80,200),wid*rand(.4,.65));
+    q.setFromEuler(new THREE.Euler(0,rand(0,TAU),0));m.compose(p,q,s);
+    mtn.setMatrixAt(i,m);
+    cc.copy(cA).lerp(cB,Math.random()).lerp(new THREE.Color(SKY),clamp((r-1500)/700,0,1)*0.6); // aerial perspective fade to fog
+    mtn.setColorAt(i,cc);
+  }
+  scene.add(mtn);
+})();
+
+/* ---------- post-processing: bloom + gamma + FXAA ---------- */
+// The grade pass is never optional — it is what tone-maps the frame — but the
+// passes either side of it are, and on the low preset the chain is a render
+// plus one full-screen quad.
+let composer=null,pipe=null;
+try{
+  pipe=PR.buildPipeline(renderer,scene,camera,
+    {EffectComposer,RenderPass,ShaderPass,UnrealBloomPass,SMAAPass},
+    {
+      exposure:0.92,
+      bloom:Q.bloom,bloomThreshold:1.05,bloomStrength:0.45,bloomRadius:0.75,
+      ao:Q.ao,aoRadius:1.1,aoIntensity:0.85,aoSamples:12,aoPower:1.15,aoScale:0.5,
+      smaa:Q.smaa,
+      grade:{
+        contrast:1.10,saturation:0.97,vignette:0.30,
+        grain:0.032,aberration:0.0018,sharpen:0.38,
+        lift:new THREE.Vector3(0.014,0.014,0.020),
+      },
+    });
+  composer=pipe.composer;
+}catch(err){
+  console.warn('post-processing unavailable, falling back to direct render',err);
+  composer=null;pipe=null;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;   // the grade pass did this
+  renderer.toneMappingExposure=1.05;
+}
+
+/* ---------- explosion / crater decals list ---------- */
+const craters=[];
+function addCrater(x,z,r){
+  const h=groundH(x,z);
+  const m=new THREE.Mesh(new THREE.CircleGeometry(r,18),new THREE.MeshBasicMaterial({color:0x241d16,transparent:true,opacity:0.75}));
+  m.rotation.x=-Math.PI/2;m.position.set(x,h+0.12,z);m.rotateZ(rand(0,TAU));scene.add(m);
+  craters.push(m);if(craters.length>70)scene.remove(craters.shift());
+}
+
+/* ============================== TANK MODELS ============================== */
+const _texCache={};
+function wornTex(base){ // painted armor with weathering streaks, panel lines, chips
+  const c=document.createElement("canvas");c.width=c.height=256;const g=c.getContext("2d");
+  g.fillStyle=base;g.fillRect(0,0,256,256);
+  for(let i=0;i<220;i++){
+    g.globalAlpha=rand(.04,.11);g.fillStyle=Math.random()<.6?"#3a352c":"#d6cbb0";
+    g.fillRect(rand(0,256),rand(0,80),rand(1,4),rand(30,256));
+  }
+  g.globalAlpha=.3;g.strokeStyle="rgba(0,0,0,.45)";
+  for(let y=32;y<256;y+=32){g.beginPath();g.moveTo(0,y);g.lineTo(256,y);g.stroke();}
+  for(let x=32;x<256;x+=64){g.beginPath();g.moveTo(x,0);g.lineTo(x,256);g.stroke();}
+  g.globalAlpha=.5;
+  for(let i=0;i<50;i++){g.fillStyle=Math.random()<.5?"rgba(60,52,40,.45)":"rgba(190,180,150,.3)";g.fillRect(rand(0,256),rand(0,256),rand(2,7),rand(1,4));}
+  g.globalAlpha=1;
+  return new THREE.CanvasTexture(c);
+}
+function treadTex(){ // track link pattern
+  const c=document.createElement("canvas");c.width=c.height=64;const g=c.getContext("2d");
+  g.fillStyle="#3d3a33";g.fillRect(0,0,64,64);
+  for(let y=0;y<64;y+=8){g.fillStyle="rgba(0,0,0,.55)";g.fillRect(0,y,64,2);}
+  for(let y=0;y<64;y+=16){g.fillStyle="rgba(255,255,255,.07)";g.fillRect(0,y+4,64,2);}
+  for(let i=0;i<50;i++){g.fillStyle="rgba(0,0,0,.3)";g.fillRect(rand(0,64),rand(0,64),rand(1,3),rand(1,3));}
+  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(2,8);return t;
+}
+function buildTankModel(type){ // type: 'abrams' | 't90'
+  const g=new THREE.Group();
+  const isAbrams=type==="abrams";
+  if(!_texCache[type])_texCache[type]={hull:wornTex(isAbrams?"#a89a6e":"#5f6b5c"),tread:treadTex()};
+  // Panel seams, rivets and rain streaking over the existing camouflage bake.
+  const wearMaps=PR.metalPanels({size:Q.pixelRatio<1?256:512,color:'#ffffff',panel:4,wear:0.55,streak:0.7,seed:type==="abrams"?211:223});
+  const hullMat=new THREE.MeshStandardMaterial({
+    color:0xffffff,map:_texCache[type].hull,
+    normalMap:wearMaps.normalMap,roughnessMap:wearMaps.roughnessMap,metalnessMap:wearMaps.metalnessMap,
+    normalScale:new THREE.Vector2(0.55,0.55),roughness:1,metalness:1,envMapIntensity:0.75,
+  });
+  const trackMat=new THREE.MeshStandardMaterial({
+    color:0xffffff,map:_texCache[type].tread,
+    normalMap:wearMaps.normalMap,normalScale:new THREE.Vector2(0.8,0.8),
+    roughness:0.85,metalness:0.55,envMapIntensity:0.9,
+  });
+  const dark=new THREE.MeshStandardMaterial({color:0x2e2c27,roughness:0.85,metalness:0.4,envMapIntensity:0.8});
+  const metal=new THREE.MeshStandardMaterial({color:0x4a463c,roughness:.55,metalness:.55});
+  const glass=new THREE.MeshStandardMaterial({color:0xb9bfa8,roughness:.35,metalness:.2});
+  // tracks (treaded) + fenders + road wheels
+  for(const s of[-1,1]){
+    const t=new THREE.Mesh(new THREE.BoxGeometry(1.5,1.0,7.6),trackMat);
+    t.position.set(s*2.05,-0.35,0);t.castShadow=true;g.add(t);
+    const f=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.1,7.3),hullMat);
+    f.position.set(s*2.05,0.18,0);f.castShadow=true;g.add(f);
+    for(let i=0;i<6;i++){
+      const w=new THREE.Mesh(new THREE.CylinderGeometry(0.58,0.58,0.42,12),dark);
+      w.rotation.z=Math.PI/2;w.position.set(s*2.05,-0.42,-3+i*1.2);g.add(w);
+    }
+  }
+  // hull (model forward = +z)
+  const hull=new THREE.Mesh(new THREE.BoxGeometry(3.6,1.4,7.2),hullMat);
+  hull.position.y=0.55;hull.castShadow=true;g.add(hull);
+  const glacis=new THREE.Mesh(new THREE.BoxGeometry(3.3,0.9,2.6),hullMat);
+  glacis.position.set(0,0.85,3.4);glacis.rotation.x=0.5;glacis.castShadow=true;g.add(glacis);
+  // driver visor slit + headlights on the glacis face
+  const visor=new THREE.Mesh(new THREE.BoxGeometry(1.5,0.12,0.7),dark);visor.position.set(0,0.48,0.7);glacis.add(visor);
+  for(const s of[-1,1]){const hl=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.12,0.2),glass);hl.position.set(s*1.15,0.49,0.9);glacis.add(hl);}
+  const deck=new THREE.Mesh(new THREE.BoxGeometry(3.2,0.5,2.2),hullMat);
+  deck.position.set(0,1.0,-2.6);deck.rotation.x=-0.25;deck.castShadow=true;g.add(deck);
+  // rear stowage bins + crew hatch on the engine deck
+  for(const s of[-1,1]){const bin=new THREE.Mesh(new THREE.BoxGeometry(1.3,0.5,1.4),hullMat);bin.position.set(s*0.8,0.48,-0.4);deck.add(bin);}
+  const hatch=new THREE.Mesh(new THREE.BoxGeometry(1.6,0.1,0.9),hullMat);hatch.position.set(0,0.29,0.55);deck.add(hatch);
+  // engine grille slats + side exhaust stacks
+  const slatMat=new THREE.MeshStandardMaterial({color:0x2e2c27,roughness:1});
+  for(let i=0;i<4;i++){const sl=new THREE.Mesh(new THREE.BoxGeometry(2.6,0.08,0.9),slatMat);sl.position.set(0,1.28,-3.15+i*0.75);g.add(sl);}
+  for(const s of[-1,1]){const ex=new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.17,0.8,8),dark);ex.rotation.z=Math.PI/2;ex.position.set(s*1.85,1.05,-3.4);g.add(ex);}
+  // turret group (rotates)
+  const turret=new THREE.Group();turret.position.set(0,1.35,-0.4);g.add(turret);
+  if(isAbrams){
+    const t=new THREE.Mesh(new THREE.BoxGeometry(2.9,1.35,4.6),hullMat);
+    t.position.y=0.7;t.castShadow=true;turret.add(t);
+    const cheek=new THREE.Mesh(new THREE.BoxGeometry(2.5,0.8,1.6),hullMat);
+    cheek.position.set(0,1.1,-1.4);cheek.rotation.x=-0.35;cheek.castShadow=true;turret.add(cheek);
+    const bustle=new THREE.Mesh(new THREE.BoxGeometry(2.4,0.9,1.3),hullMat);bustle.position.set(0,0.5,-2.7);turret.add(bustle);
+    // commander cupola + ring handle + CROWS mast + loader hatch
+    const cup=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.5,0.9),hullMat);cup.position.set(0.7,1.6,-1.2);turret.add(cup);
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(0.32,0.05,6,14),dark);ring.rotation.x=Math.PI/2;ring.position.set(0.7,1.88,-1.2);turret.add(ring);
+    const scope=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.4,0.3),slatMat);scope.position.set(0.7,2.05,-1.2);turret.add(scope);
+    const th=new THREE.Mesh(new THREE.BoxGeometry(1.7,0.1,1.5),hullMat);th.position.set(-0.4,1.42,-0.2);turret.add(th);
+  }else{
+    const t=new THREE.Mesh(new THREE.CylinderGeometry(2.0,2.3,1.3,10),hullMat);
+    t.position.y=0.65;t.scale.x=1.15;t.castShadow=true;turret.add(t);
+    const dome=new THREE.Mesh(new THREE.SphereGeometry(1.9,10,6,0,TAU,0,Math.PI/2),hullMat);
+    dome.position.y=1.3;dome.scale.set(1.15,0.45,1);dome.castShadow=true;turret.add(dome);
+    // KORA APSS pods (iconic 2x2 grid above the turret)
+    for(const sx of[-1,1])for(const sz of[-1,1]){
+      const pod=new THREE.Mesh(new THREE.BoxGeometry(1.35,0.3,0.65),hullMat);
+      pod.position.set(sx*0.75,2.02,sz*0.85);turret.add(pod);
+    }
+    // gunner sight housing
+    const gs=new THREE.Mesh(new THREE.BoxGeometry(0.6,0.5,0.8),dark);gs.position.set(0,2.15,1.2);turret.add(gs);
+  }
+  // barrel (120mm): thermal sleeve, bore evacuator, rings, muzzle device
+  const bl=isAbrams?7.4:6.9;
+  const barrel=new THREE.Group();barrel.position.set(0,0.85,isAbrams?2.35:2.1);turret.add(barrel);
+  const bMesh=new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.13,bl,10),metal);
+  bMesh.rotation.x=Math.PI/2;bMesh.position.z=bl/2;bMesh.castShadow=true;barrel.add(bMesh);
+  const ths=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.16,2.2,10),metal);ths.rotation.x=Math.PI/2;ths.position.z=bl*0.78;barrel.add(ths);
+  const ev=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,0.95,10),metal);ev.rotation.x=Math.PI/2;ev.position.z=bl*0.42;barrel.add(ev);
+  for(let i=0;i<3;i++){const ring=new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.17,0.5,10),slatMat);ring.rotation.x=Math.PI/2;ring.position.z=bl*0.12+i*bl*0.1;barrel.add(ring);}
+  if(!isAbrams){ // T-90 muzzle brake + side plates
+    const mb=new THREE.Mesh(new THREE.CylinderGeometry(0.19,0.19,0.7,10),slatMat);mb.rotation.x=Math.PI/2;mb.position.z=bl-0.35;barrel.add(mb);
+    const plate=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.42,0.8),dark);plate.position.z=bl-0.35;barrel.add(plate);
+  }else{ // MRS box at muzzle
+    const mrs=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.42,0.9),slatMat);mrs.position.z=bl*0.86;barrel.add(mrs);
+  }
+  // muzzle anchors
+  const mainMuzzle=new THREE.Object3D();mainMuzzle.position.set(0,0,bl+0.15);barrel.add(mainMuzzle);
+  const mgAnchor=new THREE.Object3D();mgAnchor.position.set(1.4,0.35,isAbrams?0.9:0.8);turret.add(mgAnchor);
+  const cupolaAnchor=new THREE.Object3D();cupolaAnchor.position.set(0,1.5,0);turret.add(cupolaAnchor);
+  // twin antennas
+  const ant=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.03,2.6,4),dark);ant.position.set(-1.0,2.7,-1.8);g.add(ant);
+  const ant2=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.025,1.9,4),dark);ant2.position.set(1.05,2.6,-2.0);g.add(ant2);
+  return {group:g,turret,barrel,mainMuzzle,mgAnchor,cupolaAnchor,barrelLen:bl};
+}
+
+/* ============================== TANK ENTITY ============================== */
+const tanks=[];
+class Tank{
+  constructor(type,team,x,z,heading,isPlayer){
+    this.type=type;this.team=team;this.isPlayer=isPlayer||false;
+    this.pos=new THREE.Vector3(x,groundH(x,z),z);
+    this.heading=heading;this.turretYaw=0;this.elev=0.02;
+    this.speed=0;this.hp=100;this.alive=true;this.deadT=0;
+    this.reloadT=0;this.recoil=0;this.mgCooldown=0;
+    this.ammo={ap:24,he:12};this.round="ap";
+    this.vel=new THREE.Vector3();this.lastPos=this.pos.clone();
+    this.smokeTimer=rand(2,6);this.hitFlash=0;
+    this.aiState="patrol";this.wp=new THREE.Vector3(rand(-700,700),0,rand(-700,700));
+    this.engageTarget=null;this.lastSeen=null;this.fireTimer=rand(1,4);this.decideT=0;
+    this.model=buildTankModel(type);
+    this.group=this.model.group;
+    scene.add(this.group);
+    this.group.traverse(o=>{if(o.isMesh)o.castShadow=true;});
+    const mset=new Set();this.group.traverse(o=>{if(o.isMesh&&o.material.emissive)mset.add(o.material);});
+    this.mats=[...mset];
+  }
+  get fwd(){return new THREE.Vector3(Math.sin(this.heading),0,Math.cos(this.heading));}
+  get barrelYaw(){return this.heading+this.turretYaw;}
+  barrelDir(){const y=this.barrelYaw,e=this.elev;return new THREE.Vector3(Math.sin(y)*Math.cos(e),Math.sin(e),Math.cos(y)*Math.cos(e));}
+  muzzleWorld(){const v=new THREE.Vector3();this.model.mainMuzzle.getWorldPosition(v);return v;}
+  turretWorld(){const v=new THREE.Vector3();this.model.cupolaAnchor.getWorldPosition(v);return v;}
+  applyThrottle(throttle,steer,dt){
+    if(!this.alive)return;
+    const accel=this.speed<throttle?7.5: (throttle>this.speed? -8 : 6);
+    this.speed+=clamp(throttle-this.speed,-accel*dt*3,accel*dt*3);
+    this.speed-=this.speed*0.12*dt; // rolling drag
+    if(Math.abs(this.speed)<0.15&&Math.abs(throttle)<0.05)this.speed=0;
+    const turn=clamp(this.speed/7,-1,1)*2.1*dt;
+    this.heading+=steer*turn*(this.speed<0?-1:1);
+    const f=this.fwd;
+    this.pos.x+=f.x*this.speed*dt;this.pos.z+=f.z*this.speed*dt;
+    // slope resistance
+    const sl=groundSlope(this.pos.x,this.pos.z);
+    const uphill=(sl.px*f.x+sl.pz*f.z)*Math.sign(this.speed||1);
+    if(uphill>0.3)this.speed-=uphill*2.2*dt*8;
+    this.pos.x=clamp(this.pos.x,-FIELD+15,FIELD-15);
+    this.pos.z=clamp(this.pos.z,-FIELD+15,FIELD-15);
+    this.pos.y=groundH(this.pos.x,this.pos.z);
+    // velocity estimate for lead aiming
+    const v=this.pos.clone().sub(this.lastPos).multiplyScalar(1/Math.max(dt,0.001));
+    this.vel.lerp(v,0.15);this.lastPos.copy(this.pos);
+  }
+  updateVisuals(t){
+    const g=this.group;
+    // ground alignment: pitch/roll from slope + suspension bob
+    const s=groundSlope(this.pos.x,this.pos.z);
+    const bob=this.alive?Math.sin(t*9+this.pos.x)*clamp(Math.abs(this.speed)/24,0,1)*0.16:0;
+    g.position.set(this.pos.x,this.pos.y+0.8+bob,this.pos.z); // tracks bottom sits on terrain
+    g.rotation.set(0,-this.heading,0);
+    // local pitch/roll (forward = +z in model space)
+    const hull=this.model;
+    g.children.forEach(()=>{});
+    this._tilt=(Math.atan2(s.px*fwdLocalX(this),1)*-1)+Math.atan2(s.pz*fwdLocalZ(this),1);
+    // simpler: rotate group around local axes by slope projected to heading
+    const pitch=Math.atan2(s.px*Math.sin(this.heading)+s.pz*Math.cos(this.heading),1);
+    const roll=Math.atan2(s.px*Math.cos(this.heading)-s.pz*Math.sin(this.heading),1);
+    g.rotation.set(-pitch,this.heading,-roll,"YXZ");
+    this.model.turret.rotation.y=this.turretYaw;
+    // barrel: model points +z; rotate x by elev (barrel group child of turret)
+    this.model.barrel.rotation.x=-this.elev;
+    // recoil kick along barrel
+    const kick=this.recoil*0.9;
+    this.model.barrel.position.z=(this.type==="abrams"?2.35:2.1);
+    this.model.barrel.children[0].position.z=this.model.barrelLen/2-kick*0.4;
+    this.model.barrel.position.y=0.85;
+    this.recoil=Math.max(0,this.recoil-3.2*dtGlobal);
+    // hit flash: whole hull glows white-orange for a moment when struck
+    const hf=this.hitFlash;this.mats.forEach(m=>m.emissive.setRGB(hf*1.1,hf*0.85,hf*0.5));
+  }
+  fireMain(){
+    if(!this.alive||this.reloadT>0)return false;
+    const ammoLeft=this.round==="ap"?this.ammo.ap:this.ammo.he;
+    if(ammoLeft<=0){this.round=this.round==="ap"?"he":"ap";return false;}
+    if(this.round==="ap")this.ammo.ap--;else this.ammo.he--;
+    this.reloadT=this.type==="abrams"?5.2:4.6;
+    this.recoil=1;
+    const m=this.muzzleWorld(),d=this.barrelDir();
+    const v0=this.round==="ap"?1750:1250;
+    spawnShell(m,d,v0,this.round,this);
+    AudioSys.shot(camDistTo(this.pos));
+    flashLight(m,this.isPlayer?0.5:2.6,0xffcf8a);
+    puff(m,d.clone().multiplyScalar(8),0xffe9c2,rand(.7,1.1),1.3,0.07,0,0.55); // muzzle flash (bloom) — dim on own shots
+    spawnMuzzleSmoke(m,d);
+    if(this.isPlayer)haptic(35); // main-gun kick
+    return true;
+  }
+  fireMG(dt){
+    if(!this.alive||this.mgCooldown>0)return;
+    this.mgCooldown=0.09;
+    const a=this.model.mgAnchor.getWorldPosition(new THREE.Vector3());
+    const d=new THREE.Vector3();this.model.mgAnchor.getWorldDirection(d);
+    d.y-=0.01+rand(-0.02,0.02);d.x+=rand(-0.015,0.015);d.z+=rand(-0.015,0.015);d.normalize();
+    spawnTracer(a,d.clone().multiplyScalar(1400),this.team);
+    puff(a,d.clone().multiplyScalar(5),0xffe9c2,rand(.7,1.1),1.4,0.06,0,.9); // small MG flash
+    AudioSys.mg(camDistTo(this.pos));
+  }
+  damage(n,from){
+    if(!this.alive)return;
+    this.hp-=n;this.hitFlash=1;
+    if(this.isPlayer){hudDamageFlash();haptic(70);}
+    if(this.hp<=0)this.die(from);
+  }
+  die(by){
+    this.alive=false;this.deadT=0;this.exploded=false;
+    this.speed*=0.4;
+    const c=this.pos.clone().setY(this.pos.y+1);
+    explode(c,2.6);
+    addCrater(this.pos.x,this.pos.z,rand(2.5,4));
+    msg((this.type==="abrams"?"M1A2":"T-90")+(this.team===0?" (ALLY)":"")+" DESTROYED",by&&by.isPlayer?"#b0ff8a":"#ffd24a");
+  }
+}
+function fwdLocalX(){return 1;}function fwdLocalZ(){return 0;}
+function camDistTo(p){return camera.position.distanceTo(p);}
+
+/* ============================== SHELLS / TRACERS ============================== */
+const shells=[],tracers=[];
+const shellGeoAP=new THREE.BoxGeometry(0.12,0.12,2.4);
+const shellGeoHE=new THREE.SphereGeometry(0.35,8,6);
+const shellMatAP=new THREE.MeshStandardMaterial({color:0xb9c2cc,metalness:.8,roughness:.3});
+const shellMatHE=new THREE.MeshStandardMaterial({color:0x8a8f7a,metalness:.4,roughness:.7});
+function spawnShell(pos,dir,v0,kind,owner){
+  const mesh=new THREE.Mesh(kind==="ap"?shellGeoAP:shellGeoHE,kind==="ap"?shellMatAP:shellMatHE);
+  mesh.position.copy(pos);scene.add(mesh);
+  let glow=null;
+  if(owner){ // bright tracer core so 120mm rounds are trackable in flight
+    const isP=owner.isPlayer;
+    glow=new THREE.Mesh(new THREE.BoxGeometry(isP?0.3:0.24,isP?0.3:0.24,isP?7:5),new THREE.MeshBasicMaterial({color:isP?0xffffff:0xff8a5a,blending:THREE.AdditiveBlending,transparent:true,opacity:isP?0.95:0.6,depthWrite:false,toneMapped:false}));
+    glow.position.copy(pos);scene.add(glow);
+  }
+  shells.push({mesh,glow,pos:pos.clone(),vel:dir.clone().multiplyScalar(v0),kind,owner,life:4});
+}
+const tracerGeo=new THREE.BoxGeometry(0.05,0.05,1.6);
+function spawnTracer(pos,vel,team){
+  const mat=new THREE.MeshBasicMaterial({color:team===0?0x9effb0:0xffd9a0,transparent:true,opacity:0.9});
+  const mesh=new THREE.Mesh(tracerGeo,mat);mesh.position.copy(pos);scene.add(mesh);
+  tracers.push({mesh,pos:pos.clone(),vel,life:0.45,team});
+}
+function updateShells(dt){
+  for(let i=shells.length-1;i>=0;i--){
+    const s=shells[i];s.life-=dt;
+    s.vel.y-=G*dt;s.pos.addScaledVector(s.vel,dt);
+    s.mesh.position.copy(s.pos);
+    s.mesh.lookAt(s.pos.clone().add(s.vel));
+    if(s.glow){s.glow.position.copy(s.pos);s.glow.lookAt(s.pos.clone().add(s.vel));}
+    // smoke trail on player's main-gun shells (aiming aid)
+    if(s.owner&&s.owner.isPlayer){
+      s.trailT=(s.trailT||0)-dt;
+      if(s.trailT<=0){s.trailT=0.02;puff(s.pos,new THREE.Vector3(rand(-.3,.3),rand(.1,.4),rand(-.3,.3)),0x9aa09a,rand(.8,1.2),1.8,0.9,-0.15,0.5);}
+    }
+    let hit=false;
+    if(s.pos.y<=groundH(s.pos.x,s.pos.z)+0.25){explode(s.pos,s.kind==="ap"?1.4:2.2,Math.abs(s.vel)>800);if(s.owner&&s.owner.isPlayer)impactMark(s.pos);hit=true;}
+    for(const t of tanks){
+      if(!t.alive||t===s.owner)continue;
+      const c=t.pos.clone().setY(t.pos.y+1);
+      if(s.pos.distanceTo(c)<3.4){
+        let dmg=s.kind==="ap"?rand(26,40):rand(14,22);
+        t.damage(dmg,s.owner);hit=true;
+        spawnMuzzleSmoke(s.pos.clone(),s.vel.clone().normalize().negate());
+        hitFX(s.pos,t,s.kind,dmg);
+        if(s.owner&&s.owner.isPlayer)hitMark(dmg);
+      }
+    }
+    if(s.life<=0||hit){scene.remove(s.mesh);if(s.glow)scene.remove(s.glow);shells.splice(i,1);}
+  }
+  for(let i=tracers.length-1;i>=0;i--){
+    const t=tracers[i];t.life-=dt;
+    t.pos.addScaledVector(t.vel,dt);
+    t.mesh.position.copy(t.pos);
+    t.mesh.lookAt(t.pos.clone().add(t.vel));
+    t.mesh.material.opacity=Math.max(0,t.life/0.45)*0.9;
+    let hit=false;
+    if(t.pos.y<=groundH(t.pos.x,t.pos.z)+0.3)hit=true;
+    for(const tk of tanks){
+      if(!tk.alive||tk.team===t.team)continue;
+      const c=tk.pos.clone().setY(tk.pos.y+1);
+      if(t.pos.distanceTo(c)<2.8){tk.damage(1.2,null);hit=true;puff(t.pos,new THREE.Vector3(rand(-3,3),rand(1,4),rand(-3,3)),0x8a8578,rand(.6,1),1.5,0.5,-0.5,0.4);}
+    }
+    // drone kill check
+    if(drone.state==="flying"&&t.pos.distanceTo(drone.pos)<7){drone.killed();hit=true;}
+    if(hit||t.life<=0){scene.remove(t.mesh);tracers.splice(i,1);}
+  }
+}
+
+/* ============================== PARTICLES / EXPLOSIONS ============================== */
+const particles=[];
+const flashPool=[];
+function flashLight(pos,intensity,color){
+  let l=flashPool.find(f=>!f.active);
+  if(!l&&flashPool.length<6){l=new THREE.PointLight(0xffffff,0,120,1.8);l.active=false;scene.add(l);flashPool.push(l);}
+  if(!l)return;l.active=true;l.position.copy(pos).add(new THREE.Vector3(0,1.5,0));
+  l.intensity=intensity*60;l.color.set(color);
+}
+function updateParticles(dt){
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];p.life-=dt;
+    if(p.life<=0){scene.remove(p.mesh);particles.splice(i,1);continue;}
+    p.vel.y+=(p.grav||0)*dt;p.pos.addScaledVector(p.vel,dt);
+    const gy=groundH(p.pos.x,p.pos.z)+0.2;
+    if(p.pos.y<gy)p.pos.y=gy;
+    p.mesh.position.copy(p.pos);
+    const k=p.life/p.maxLife;
+    if(p.grow){const s=p.baseS*(1+(1-k)*p.grow);p.mesh.scale.set(s,s,s);}
+    if(p.mesh.material.opacity!==undefined)p.mesh.material.opacity=k*p.baseO;
+  }
+  for(const l of flashPool)if(l.active)l.intensity=Math.max(0,l.intensity-90*dtGlobal),l.intensity<=0&&(l.active=false);
+}
+/* ---------- impact feedback: sparks, smoke, hull flash, HUD marker ---------- */
+let hitmarkTimer=0;
+function hitMark(dmg){
+  const h=document.getElementById("hitmark");
+  h.textContent="✕ +"+Math.round(dmg);
+  h.style.opacity=1;h.style.transform="translate(-50%,-50%) scale(1.3)";
+  clearTimeout(hitmarkTimer);hitmarkTimer=setTimeout(()=>{h.style.opacity=0;},420);
+}
+function hitFX(pos,tank,kind,dmg){
+  // spark burst — white-hot so bloom catches it
+  const n=10+Math.floor(rand(0,6));
+  for(let i=0;i<n;i++){
+    const v=new THREE.Vector3(rand(-1,1),rand(-0.4,1),rand(-1,1)).normalize().multiplyScalar(rand(8,26));
+    puff(pos,v,Math.random()<0.5?0xffffff:0xffc873,rand(.4,.9),0.4,rand(.12,.3),-6,Math.random()<0.5?0.9:0.7);
+  }
+  // smoke column from the struck tank
+  const nS=kind==="he"?6:4;
+  for(let i=0;i<nS;i++){
+    puff(pos,new THREE.Vector3(rand(-2,2),rand(1,4),rand(-2,2)),Math.random()<0.5?0x555555:0x777770,rand(1.6,2.8),2.2,rand(1.2,2.6),-0.3,0.55);
+  }
+  if(kind==="he")puff(pos,new THREE.Vector3(0,3,0),0xff9a4a,rand(2,3),1.8,0.35,0,0.85); // fireball core
+}
+function puff(pos,vel,color,size,grow,life,grav,baseO=0.5){
+  const m=new THREE.Sprite(new THREE.SpriteMaterial({map:SOFT_TEX,color,transparent:true,opacity:baseO,depthWrite:false}));
+  m.position.copy(pos);m.scale.set(size,size,1);scene.add(m);
+  particles.push({mesh:m,pos:pos.clone(),vel,life,maxLife:life,grow,baseS:size,baseO,grav});
+}
+function spawnMuzzleSmoke(m,d){
+  for(let i=0;i<3;i++){
+    const v=d.clone().multiplyScalar(-rand(1.5,4)).add(new THREE.Vector3(rand(-1,1),rand(.2,1.2),rand(-1,1)));
+    puff(m,v,0x8a8f85,rand(.9,1.4),1.8,rand(.5,.9),-0.4,0.5);
+  }
+}
+/* landing markers: show where your shells struck the ground */
+const impactMarks=[];
+function impactMark(pos){
+  const y=groundH(pos.x,pos.z)+0.3;
+  const ring=new THREE.Mesh(new THREE.RingGeometry(1.4,2.2,28),new THREE.MeshBasicMaterial({color:0xffe066,transparent:true,opacity:0.95,side:THREE.DoubleSide,depthWrite:false}));
+  ring.rotation.x=-Math.PI/2;ring.position.set(pos.x,y,pos.z);scene.add(ring);
+  const dot=new THREE.Mesh(new THREE.CircleGeometry(0.5,16),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.95,side:THREE.DoubleSide,depthWrite:false}));
+  dot.rotation.x=-Math.PI/2;dot.position.set(pos.x,y+0.02,pos.z);scene.add(dot);
+  impactMarks.push({meshes:[ring,dot],life:4,maxLife:4});
+  for(let i=0;i<4;i++)puff(pos,new THREE.Vector3(rand(-4,4),rand(2,6),rand(-4,4)),0xffffff,rand(.5,.9),1.2,0.25,-4,0.8);
+}
+function updateImpactMarks(dt){
+  for(let i=impactMarks.length-1;i>=0;i--){
+    const m=impactMarks[i];m.life-=dt;
+    if(m.life<=0){scene.remove(m.meshes[0]);scene.remove(m.meshes[1]);impactMarks.splice(i,1);continue;}
+    const k=m.life/m.maxLife;
+    m.meshes[0].material.opacity=k*0.95;m.meshes[1].material.opacity=k*0.95;
+  }
+}
+function explode(pos,scale=2,dust=true){
+  const d=Math.max(0.4,camDistTo(pos));
+  AudioSys.boom(d);
+  shake=Math.min(1.4,shake+scale*0.5/d*60*0.03+scale*0.12);
+  flashLight(pos,scale,0xffd9a8);
+  // fireball
+  puff(pos,new THREE.Vector3(0,rand(1,3),0),0xffb057,scale*2.4,2.2,0.5,0,0.9);
+  puff(pos.clone().add(new THREE.Vector3(0,scale*0.6,0)),new THREE.Vector3(0,2,0),0xfff0c0,scale*1.2,2.8,0.4,0,0.95);
+  puff(pos,new THREE.Vector3(0,rand(2,4),0),0xffffff,scale*1.6,2.6,0.3,0,1); // white-hot core (bloom)
+  // smoke column
+  const n=Math.floor(8+scale*4);
+  for(let i=0;i<n;i++){
+    puff(pos.clone().add(new THREE.Vector3(rand(-1,1)*scale,rand(0,scale),rand(-1,1)*scale)),
+      new THREE.Vector3(rand(-2,2),rand(2,5+scale*2),rand(-2,2)),
+      Math.random()<.7?0x4a4a48:0x6b6257,scale*rand(1.4,2.6),rand(1.5,3),rand(1.8,3.6),-0.6);
+  }
+  if(dust)for(let i=0;i<6;i++)
+    puff(pos.clone(),new THREE.Vector3(rand(-6,6),rand(1,4),rand(-6,6)),0x9a8a6a,scale*rand(.5,1),2.5,rand(.6,1.4),-2,0.35);
+  addCrater(pos.x,pos.z,scale*rand(1.2,1.8));
+}
+
+/* ============================== DRONE / UAV ============================== */
+const drone={state:"stowed",pos:new THREE.Vector3(),model:null,t:0,endurance:600,maxEnd:600,orbitA:0,cooldown:0};
+(function buildDrone(){
+  const g=new THREE.Group();
+  const body=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.35,1.2),new THREE.MeshStandardMaterial({color:0x8a8f7a,roughness:.7}));
+  g.add(body);
+  const camBall=new THREE.Mesh(new THREE.SphereGeometry(0.22,8,6),new THREE.MeshStandardMaterial({color:0x222,roughness:.3}));
+  camBall.position.set(0,-0.25,0.4);g.add(camBall);
+  const armMat=new THREE.MeshStandardMaterial({color:0x555,roughness:.8});
+  drone.rotors=[];
+  for(const [ax,az] of [[-0.7,-0.7],[0.7,-0.7],[-0.7,0.7],[0.7,0.7]]){
+    const arm=new THREE.Mesh(new THREE.BoxGeometry(1.6,0.08,0.1),armMat);
+    arm.position.set(ax/2*1.4,0.15,az/2*1.4);arm.rotation.y=Math.atan2(az,ax);g.add(arm);
+    const rotor=new THREE.Mesh(new THREE.CylinderGeometry(0.62,0.62,0.03,3),new THREE.MeshBasicMaterial({color:0x999,transparent:true,opacity:0.35}));
+    rotor.position.set(ax*1.4,0.28,az*1.4);g.add(rotor);drone.rotors.push(rotor);
+  }
+  g.visible=false;scene.add(g);drone.model=g;
+})();
+function droneDeploy(){
+  if(drone.state!=="stowed"||drone.cooldown>0)return;
+  const p=tanks.find(t=>t.isPlayer);if(!p||!p.alive)return;
+  drone.state="launch";drone.t=0;
+  drone.pos.copy(p.pos).add(p.fwd.clone().multiplyScalar(-6)).setY(p.pos.y+2);
+  drone.model.visible=true;
+  msg("UAV DEPLOYED — TACTICAL FEED LIVE","#9eff9e");
+}
+function updateDrone(dt){
+  const p=tanks.find(t=>t.isPlayer);
+  if(drone.cooldown>0)drone.cooldown-=dt;
+  drone.t+=dt;
+  for(const r of drone.rotors)r.rotation.y+=40*dt;
+  if(drone.state==="launch"){
+    drone.pos.y+=dt*14;
+    const target=p?p.pos.clone().add(p.fwd.clone().multiplyScalar(120)):new THREE.Vector3();
+    drone.pos.x=lerp(drone.pos.x,target.x,dt*0.5);drone.pos.z=lerp(drone.pos.z,target.z,dt*0.5);
+    if(drone.pos.y>p.pos.y+65){drone.state="flying";drone.orbitA=rand(0,TAU);}
+  }else if(drone.state==="flying"){
+    drone.endurance-=dt;
+    const anchor=p?p.pos.clone().add(p.fwd.clone().multiplyScalar(130)):new THREE.Vector3();
+    drone.orbitA+=dt*0.25;
+    const tx=anchor.x+Math.cos(drone.orbitA)*70,tz=anchor.z+Math.sin(drone.orbitA)*70;
+    drone.pos.x=lerp(drone.pos.x,tx,dt*0.8);drone.pos.z=lerp(drone.pos.z,tz,dt*0.8);
+    drone.pos.y=lerp(drone.pos.y,anchor.y+65,dt*0.8);
+    if(drone.endurance<=0){drone.state="returning";msg("UAV RETURNING — ENDURANCE EXPIRED","#ffd24a");}
+  }else if(drone.state==="returning"){
+    const tp=p?p.pos.clone().add(p.fwd.clone().multiplyScalar(-8)).setY(p.pos.y+3):new THREE.Vector3();
+    drone.pos.lerp(tp,dt*1.2);
+    if(drone.pos.distanceTo(tp)<4)drone.stow();
+  }
+  drone.model.position.copy(drone.pos);
+  if(p&&drone.state==="flying")drone.model.lookAt(p.pos.clone().setY(p.pos.y+2));
+}
+function droneKilled(){
+  if(drone.state!=="flying")return;
+  explode(drone.pos.clone(),1.6);
+  msg("UAV DESTROYED — FEED LOST","#ff8a6a");
+  drone.stow(true);
+}
+drone.killed=()=>droneKilled();
+function droneStow(){drone.state="stowed";drone.model.visible=false;drone.endurance=drone.maxEnd;drone.cooldown=25;}
+drone.stow=(lost)=>{droneStow();};
+
+/* ============================== TACTICAL MAP ============================== */
+const tacC=document.getElementById("tac"),tacCtx=tacC.getContext("2d");
+let elevImg=null;
+(function bakeElevation(){
+  const S=300,off=document.createElement("canvas");off.width=off.height=S;
+  const octx=off.getContext("2d"),img=octx.createImageData(S,S);
+  for(let y=0;y<S;y++)for(let x=0;x<S;x++){
+    const wx=(x/S-0.5)*TERR,wz=(y/S-0.5)*TERR,h=groundH(wx,wz);
+    const t=clamp((h+40)/120,0,1);
+    let r,g,b;
+    if(t<0.35){r=lerp(46,70,t/0.35);g=lerp(74,96,t/0.35);b=lerp(40,58,t/0.35);}
+    else if(t<0.7){const k=(t-0.35)/0.35;r=lerp(70,120,k);g=lerp(96,110,k);b=lerp(58,70,k);}
+    else{const k=(t-0.7)/0.3;r=lerp(120,165,k);g=lerp(110,150,k);b=lerp(70,95,k);}
+    const i=(y*S+x)*4;img.data[i]=r;img.data[i+1]=g;img.data[i+2]=b;img.data[i+3]=255;
+  }
+  octx.putImageData(img,0,0);elevImg=off;
+})();
+function mapXY(x,z){return [(x/TERR+0.5)*300,(z/TERR+0.5)*300];}
+let lastKnown=new Map(); // tank -> {pos,t}
+function drawTacMap(t){
+  const ctx=tacCtx;
+  ctx.drawImage(elevImg,0,0);
+  ctx.strokeStyle="rgba(120,255,150,.18)";ctx.lineWidth=1;
+  for(let i=1;i<4;i++){ctx.beginPath();ctx.moveTo(i*75,0);ctx.lineTo(i*75,300);ctx.stroke();ctx.beginPath();ctx.moveTo(0,i*75);ctx.lineTo(300,i*75);ctx.stroke();}
+  const feedLive=drone.state==="flying";
+  for(const tk of tanks){
+    if(!tk.alive)continue; // wrecks burn on the field but drop off the map
+    let vis=false;
+    if(feedLive||tk.isPlayer)vis=true; // your own tank is always on the map
+    else{ // spot by friendly proximity + LOS
+      for(const f of tanks){
+        if(f.team!==tk.team&&f.alive&&tk.alive&&f.pos.distanceTo(tk.pos)<520&&losClear(f.pos,tk.pos)){vis=true;break;}
+      }
+    }
+    const known=lastKnown.get(tk);
+    const show=vis;
+    if(vis)lastKnown.set(tk,{x:tk.pos.x,z:tk.pos.z,t});
+    if(!show)continue;
+    const [mx,my]=mapXY(tk.pos.x,tk.pos.z);
+    ctx.save();ctx.translate(mx,my);ctx.rotate(-tk.heading+Math.PI/2*0+Math.PI); // heading 0 = +z(down)=south; rotate to face travel dir
+    ctx.fillStyle=tk.team===0?"#7cfc66":"#ff5a4a";
+    const sz=tk.isPlayer?9:7,sw=tk.isPlayer?6.5:5;
+    ctx.beginPath();ctx.moveTo(0,-sz);ctx.lineTo(sw,sz-1);ctx.lineTo(-sw,sz-1);ctx.closePath();ctx.fill();
+    if(tk.isPlayer){
+      ctx.strokeStyle="#fff";ctx.lineWidth=1.5;ctx.stroke();
+      if(Math.abs(tk.speed)>0.5){ // movement-direction tick ahead of the nose, length ~ speed
+        ctx.beginPath();ctx.moveTo(0,-sz-2);ctx.lineTo(0,-sz-8-Math.min(6,Math.abs(tk.speed)*0.4));ctx.strokeStyle="rgba(255,255,255,.85)";ctx.stroke();
+      }
+      // turret aim ray (local frame: barrel dir = (-sin ty, -cos ty))
+      const ty=tk.turretYaw,L=sz+30,dx=-Math.sin(ty),dy=-Math.cos(ty);
+      ctx.strokeStyle="rgba(255,235,120,.9)";ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
+      ctx.beginPath();ctx.moveTo(dx*sz*.6,dy*sz*.6);ctx.lineTo(dx*L,dy*L);ctx.stroke();ctx.setLineDash([]);
+      const hx=dx*(L+5),hy=dy*(L+5),px=-dy,py=dx; // arrowhead at the tip
+      ctx.fillStyle="rgba(255,235,120,.9)";
+      ctx.beginPath();ctx.moveTo(hx,hy);ctx.lineTo(hx-dx*6-px*3.5,hy-dy*6-py*3.5);ctx.lineTo(hx-dx*6+px*3.5,hy-dy*6+py*3.5);ctx.closePath();ctx.fill();
+    }
+    ctx.restore();
+  }
+  if(drone.state!=="stowed"){
+    const [dx,dy]=mapXY(drone.pos.x,drone.pos.z);
+    ctx.fillStyle="#ffe27a";ctx.beginPath();ctx.arc(dx,dy,4,0,TAU);ctx.fill();
+    // sweep
+    const a=t*1.5;ctx.strokeStyle="rgba(255,226,122,.5)";
+    ctx.beginPath();ctx.moveTo(dx,dy);ctx.lineTo(dx+Math.cos(a)*26,dy+Math.sin(a)*26);ctx.stroke();
+    ctx.strokeStyle="rgba(255,226,122,.25)";ctx.beginPath();ctx.arc(dx,dy,40,0,TAU);ctx.stroke();
+  }
+  // border + label
+  ctx.strokeStyle=feedLive?"rgba(120,255,150,.8)":"rgba(255,160,90,.7)";ctx.lineWidth=2;ctx.strokeRect(1,1,298,298);
+  document.getElementById("mapTitle").textContent=feedLive?"TACTICAL FEED — UAV LIVE":"TACTICAL MAP — LAST KNOWN";
+  document.getElementById("mapTitle").style.color=feedLive?"#9eff9e":"#ffbe7a";
+}
+
+/* ============================== LOS ============================== */
+function losClear(a,b){
+  const d=a.distanceTo(b),n=Math.ceil(d/25);
+  for(let i=1;i<n;i++){
+    const t=i/n,p=new THREE.Vector3().lerpVectors(a,b,t);
+    if(groundH(p.x,p.z)+0.5>Math.min(a.y+1,b.y+1)+(b.y+1-(a.y+1))*t)return false;
+  }
+  return true;
+}
+
+/* ============================== AI ============================== */
+function solveElev(muzzle,target,v){
+  const dx=target.x-muzzle.x,dz=target.z-muzzle.z,dy=target.y-muzzle.y;
+  const d=Math.hypot(dx,dz);let e=dy/d;
+  for(let i=0;i<6;i++){const tt=d/(v*Math.cos(e));e=Math.atan2(dy+0.5*G*tt*tt,d);}
+  return clamp(e,-0.15,0.7);
+}
+function updateAI(tk,dt){
+  if(!tk.alive)return;
+  tk.decideT-=dt;
+  // find target: nearest alive enemy team tank within sensor range
+  let best=null,bd=950;
+  for(const o of tanks){
+    if(o.team===tk.team||!o.alive)continue;
+    const d=tk.pos.distanceTo(o.pos);
+    if(d<bd&&(losClear(tk.pos.clone().setY(tk.pos.y+1),o.pos.clone().setY(o.pos.y+1))||d<260)){best=o;bd=d;}
+  }
+  tk.engageTarget=best;
+  let throttle=0,steer=0;
+  if(best){
+    const d=tk.pos.distanceTo(best.pos);
+    const toT=Math.atan2(best.pos.x-tk.pos.x,best.pos.z-tk.pos.z);
+    let dh=toT-tk.heading;while(dh>Math.PI)dh-=TAU;while(dh<-Math.PI)dh+=TAU;
+    steer=clamp(dh*1.6,-1,1);
+    throttle=d>620?12:(d<380?-5:0.15*Math.sin(tk.decideT*0.7)); // hold band, weave
+    // aim with lead
+    const muzzle=tk.muzzleWorld();
+    let target=best.pos.clone().setY(best.pos.y+1);
+    for(let i=0;i<2;i++){
+      const tt=target.distanceTo(muzzle)/1750;
+      target=best.pos.clone().addScaledVector(best.vel,tt).setY(best.pos.y+1);
+    }
+    const wantElev=solveElev(muzzle,target,1750);
+    tk.elev=lerp(tk.elev,wantElev,dt*2.2);
+    // turret yaw: aim barrel at target
+    const wantYaw=Math.atan2(target.x-muzzle.x,target.z-muzzle.z)-tk.heading;
+    let dYw=wantYaw-tk.turretYaw;while(dYw>Math.PI)dYw-=TAU;while(dYw<-Math.PI)dYw+=TAU;
+    tk.turretYaw=clamp(tk.turretYaw+clamp(dYw,-1,1)*dt*0.55,-2.4,2.4);
+    // fire
+    if(tk.reloadT<=0&&Math.abs(dYw)<0.03&&Math.abs(tk.elev-wantElev)<0.03&&d<850){
+      tk.fireTimer-=dt;
+      if(tk.fireTimer<=0){
+        tk.round=Math.random()<0.75?"ap":"he";
+        if(tk.fireMain()){tk.fireTimer=rand(2.5,6);if(Math.random()<0.3)tk.round="he";}
+      }
+    }else tk.fireTimer=Math.max(0.5,tk.fireTimer-dt);
+  }else{
+    // patrol to waypoint
+    const d=tk.pos.distanceTo(tk.wp);
+    if(d<40)tk.wp.set(rand(-800,800),0,rand(-800,800));
+    const toW=Math.atan2(tk.wp.x-tk.pos.x,ticketZ(tk.wp.z-tk.pos.z));
+    const toWp=Math.atan2(tk.wp.x-tk.pos.x,ticketZ(tk.wp.z-tk.pos.z));
+    let dh=toWp-tk.heading;while(dh>Math.PI)dh-=TAU;while(dh<-Math.PI)dh+=TAU;
+    steer=clamp(dh*1.4,-1,1);throttle=9;
+    tk.turretYaw=lerp(tk.turretYaw,0,dt*0.5);tk.elev=lerp(tk.elev,0.02,dt);
+  }
+  tk.applyThrottle(throttle,steer,dt);
+}
+function ticketZ(v){return v;}
+
+/* ============================== SPAWN BATTLE ============================== */
+let playerTank=null;
+function spawnBattle(playerType){
+  const enemyType=playerType==="abrams"?"t90":"abrams";
+  playerTank=new Tank(playerType,0,40,380,-Math.PI/2,true); // face north(-z)... heading such that fwd=-z: fwd=(sin h, cos h) => h=PI gives (0,-1). use PI.
+  playerTank.heading=Math.PI;
+  tanks.push(playerTank);
+  // allies behind
+  for(let i=0;i<2;i++){
+    const a=new Tank(playerType,0,40+rand(-90,90),380+rand(120,260),Math.PI);
+    tanks.push(a);
+  }
+  // enemies across the field
+  for(let i=0;i<4;i++){
+    const ang=-Math.PI/2+(i-1.5)*0.9;
+    const x=Math.sin(ang)*rand(650,900),z=Math.cos(ang)*rand(650,900);
+    const e=new Tank(enemyType,1,x,z,Math.atan2(40-x,380-z));
+    tanks.push(e);
+  }
+}
+
+/* ============================== INPUT / CAMERA / HUD ============================== */
+const keys={};
+let camMode="exterior",paused=false,gameOver=false;
+addEventListener("keydown",e=>{keys[e.code]=true;
+  if(e.code==="KeyC"){camMode=camMode==="exterior"?"interior":"exterior";updateCamUI();}
+  if(e.code==="KeyD")droneDeploy();
+  if(e.code==="KeyH"&&playerTank){playerTank.round=playerTank.round==="ap"?"he":"ap";}
+  if(e.code==="KeyP")paused=!paused;
+});
+addEventListener("keyup",e=>keys[e.code]=false);
+canvas.addEventListener("mousedown",e=>{if(e.button===0)keys["MouseMain"]=true;if(e.button===2)keys["MouseMG"]=true;});
+addEventListener("mouseup",e=>{if(e.button===0)keys["MouseMain"]=false;if(e.button===2)keys["MouseMG"]=false;});
+addEventListener("mousemove",e=>{ // mouse steers turret yaw (sides) and gun elevation (up/down)
+  if(!started||gameOver||paused)return;
+  const p=playerTank;if(!p||!p.alive)return;
+  p.turretYaw=clamp(p.turretYaw-e.movementX*0.0022,-2.3,2.3); // mouse right -> barrel right
+  p.elev=clamp(p.elev-e.movementY*0.0015,-0.18,0.5);
+});
+canvas.addEventListener("contextmenu",e=>e.preventDefault());
+
+/* ============================== TOUCH CONTROLS ==============================
+   Screen zones (landscape):
+     top 44%            -> turret pad: drag to slew azimuth / elevate the gun
+     bottom-left 45%    -> floating drive stick: push to throttle, tilt to steer
+     bottom-right       -> 120mm main gun + coax MG buttons, utility pills
+   Multi-touch is tracked per pointerId, so driving, aiming and firing can all
+   happen at once. Buttons stopPropagation so they never start a pad drag.     */
+const touchEl=document.getElementById("touch");
+const stickEl=document.getElementById("stick"),knobEl=document.getElementById("stickKnob");
+const tState={drive:{x:0,y:0},yawDelta:0,elevDelta:0};
+const tPointers=new Map();
+let touchBrake=false,engineThrottle=0,hudTickT=0,stickR=80,hintFaded=false;
+
+function layoutTouch(){
+  stickR=innerHeight*0.11;                                   // #stick is 22vh across
+  document.documentElement.style.setProperty("--hs",String(clamp(innerHeight/860,0.58,1)));
+}
+layoutTouch();
+
+function inDriveZone(x,y){return x<innerWidth*0.45&&y>innerHeight*0.44;}
+function placeStick(x,y){                                    // floating base, clamped on-screen
+  const cx=clamp(x,stickR+2,innerWidth-stickR-2),cy=clamp(y,stickR+2,innerHeight-stickR-2);
+  stickEl.style.left=(cx-stickR)+"px";stickEl.style.top=(cy-stickR)+"px";stickEl.style.bottom="auto";
+  stickEl.classList.add("live");
+  return {x:cx,y:cy};
+}
+function resetStick(){
+  knobEl.style.transform="";stickEl.classList.remove("live");
+  stickEl.style.left=stickEl.style.top=stickEl.style.bottom="";
+  tState.drive.x=tState.drive.y=0;
+}
+function updateStick(cx,cy,x,y){
+  let dx=x-cx,dy=y-cy;
+  const d=Math.hypot(dx,dy);
+  if(d>stickR){dx=dx/d*stickR;dy=dy/d*stickR;}
+  knobEl.style.transform="translate("+dx.toFixed(1)+"px,"+dy.toFixed(1)+"px)";
+  const nx=dx/stickR,ny=dy/stickR,mag=Math.hypot(nx,ny),dz=0.14;
+  const k=mag>dz?(mag-dz)/(1-dz)/mag:0;                      // radial dead zone
+  tState.drive.x=nx*k;tState.drive.y=ny*k;
+}
+function fadeHint(){
+  if(hintFaded)return;hintFaded=true;
+  const h=document.getElementById("turretHint");if(h)h.style.opacity="0";
+}
+touchEl.addEventListener("pointerdown",e=>{
+  if(e.target!==touchEl)return;                              // a button will handle its own press
+  e.preventDefault();
+  if(paused||gameOver)return;
+  touchEl.setPointerCapture(e.pointerId);
+  const x=e.clientX,y=e.clientY;
+  if(inDriveZone(x,y)){
+    for(const p of tPointers.values())if(p.kind==="drive")return;   // one stick at a time
+    const c=placeStick(x,y);
+    tPointers.set(e.pointerId,{kind:"drive",cx:c.x,cy:c.y});
+    updateStick(c.x,c.y,x,y);
+  }else{
+    tPointers.set(e.pointerId,{kind:"turret",lx:x,ly:y});
+    fadeHint();
+  }
+});
+touchEl.addEventListener("pointermove",e=>{
+  const p=tPointers.get(e.pointerId);if(!p)return;
+  e.preventDefault();
+  if(p.kind==="drive"){updateStick(p.cx,p.cy,e.clientX,e.clientY);}
+  else if(!paused&&!gameOver){
+    tState.yawDelta+=e.clientX-p.lx;tState.elevDelta+=e.clientY-p.ly;
+    p.lx=e.clientX;p.ly=e.clientY;
+  }else{p.lx=e.clientX;p.ly=e.clientY;}
+});
+function endTouch(e){
+  const p=tPointers.get(e.pointerId);if(!p)return;
+  tPointers.delete(e.pointerId);
+  if(p.kind==="drive")resetStick();
+}
+touchEl.addEventListener("pointerup",endTouch);
+touchEl.addEventListener("pointercancel",endTouch);
+
+function holdBtn(el,onDown,onUp){
+  el.addEventListener("pointerdown",e=>{
+    e.stopPropagation();e.preventDefault();
+    if(paused||gameOver)return;
+    try{el.setPointerCapture(e.pointerId);}catch(err){}
+    el.classList.add("press");onDown&&onDown();
+  });
+  const up=e=>{
+    e.stopPropagation();
+    if(!el.classList.contains("press"))return;
+    el.classList.remove("press");onUp&&onUp();
+  };
+  el.addEventListener("pointerup",up);
+  el.addEventListener("pointercancel",up);
+}
+function tapBtn(el,fn){holdBtn(el,()=>{haptic(12);fn();},null);}
+
+holdBtn(document.getElementById("btnFire"),()=>keys["MouseMain"]=true,()=>keys["MouseMain"]=false);
+holdBtn(document.getElementById("btnMG"),()=>keys["MouseMG"]=true,()=>keys["MouseMG"]=false);
+holdBtn(document.getElementById("btnBrake"),()=>touchBrake=true,()=>touchBrake=false);
+tapBtn(document.getElementById("btnRound"),()=>{if(playerTank)playerTank.round=playerTank.round==="ap"?"he":"ap";});
+tapBtn(document.getElementById("btnCam"),()=>{camMode=camMode==="exterior"?"interior":"exterior";updateCamUI();});
+tapBtn(document.getElementById("btnUav"),()=>droneDeploy());
+document.getElementById("btnPause").addEventListener("pointerdown",e=>{
+  e.stopPropagation();e.preventDefault();haptic(12);setPaused(!paused);
+});
+
+function releaseHeld(){
+  keys["MouseMain"]=keys["MouseMG"]=false;touchBrake=false;
+  tState.yawDelta=tState.elevDelta=0;
+  tPointers.clear();resetStick();
+  document.querySelectorAll(".press").forEach(el=>el.classList.remove("press"));
+}
+function setPaused(v){
+  if(!started||gameOver)return;
+  paused=v;
+  document.getElementById("pauseScreen").style.display=v?"flex":"none";
+  if(v)releaseHeld();                                        // an overlay would swallow the pointerup
+}
+document.getElementById("resumeBtn").onclick=()=>setPaused(false);
+document.addEventListener("visibilitychange",()=>{if(document.hidden)setPaused(true);});
+// Android hardware/gesture back: pause instead of leaving the battle (MainActivity reads the return value)
+window.__androidBack=function(){
+  if(!started||gameOver)return false;
+  setPaused(!paused);
+  return true;
+};
+addEventListener("contextmenu",e=>e.preventDefault());
+addEventListener("gesturestart",e=>e.preventDefault());
+
+
+const compassC=document.getElementById("compass"),compCtx=compassC.getContext("2d");
+function bearingDeg(h){return (540-(h*180/Math.PI)+720)%360;}
+function drawCompass(){
+  const ctx=compCtx,W=420,H=34;ctx.clearRect(0,0,W,H);
+  const hdg=bearingDeg(playerTank?playerTank.heading:Math.PI);
+  ctx.fillStyle="rgba(4,12,6,.8)";ctx.fillRect(0,0,W,H);
+  for(let b=0;b<360;b+=15){
+    let x=((b-hdg+540)%360-180)*(W/180)+W/2;
+    if(x<-20||x>W+20)continue;
+    const major=b%45===0;
+    ctx.strokeStyle=major?"#9eff9e":"#4a7a50";ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x,major?6:12);ctx.lineTo(x,H-8);ctx.stroke();
+    if(major){ctx.fillStyle="#9eff9e";ctx.font="11px Consolas";ctx.textAlign="center";
+      const lbl=["N","NE","E","SE","S","SW","W","NW"][b/45];
+      ctx.fillText(String(b).padStart(3,"0"),x,12);}
+  }
+  ctx.fillStyle="#ffd24a";ctx.fillRect(W/2-1,2,2,H-4);
+}
+function updateCamUI(){
+  document.getElementById("crosshair").style.display=camMode==="interior"?"block":"none";
+  document.getElementById("periscope").style.display=camMode==="interior"?"block":"none";
+}
+updateCamUI();
+
+let shake=0;
+function hudDamageFlash(){document.getElementById("vignette").style.opacity=1;}
+const msgs=[];
+function msg(text,color){msgs.push({text,color,t:4});if(msgs.length>4)msgs.shift();}
+
+/* ============================== MAIN LOOP ============================== */
+let dtGlobal=0,lastT=performance.now(),started=false,selType="abrams";
+document.getElementById("btnAbrams").onclick=function(){selType="abrams";this.classList.add("sel");document.getElementById("btnT90").classList.remove("sel");};
+document.getElementById("btnT90").onclick=function(){selType="t90";this.classList.add("sel");document.getElementById("btnAbrams").classList.remove("sel");};
+document.getElementById("startBtn").onclick=()=>{
+  AudioSys.init();AudioSys.ctx.resume&&AudioSys.ctx.resume();
+  document.getElementById("startScreen").style.display="none";
+  spawnBattle(selType);started=true;updateCamUI();
+  touchEl.classList.add("on");layoutTouch();haptic(20);
+  setTimeout(fadeHint,9000);
+};
+(function initSettings(){
+  document.querySelectorAll(".sbtn[data-q]").forEach(b=>{
+    b.classList.toggle("sel",b.dataset.q===qualityName);
+    b.onclick=()=>{if(b.dataset.q===qualityName)return;storeSet("tb_quality",b.dataset.q);location.reload();};
+  });
+  document.querySelectorAll(".sbtn[data-s]").forEach(b=>{
+    b.classList.toggle("sel",Math.abs(parseFloat(b.dataset.s)-aimSens)<0.01);
+    b.onclick=()=>{
+      aimSens=parseFloat(b.dataset.s);storeSet("tb_sens",b.dataset.s);
+      document.querySelectorAll(".sbtn[data-s]").forEach(o=>o.classList.toggle("sel",o===b));
+    };
+  });
+})();
+
+function update(dt){
+  dtGlobal=dt;
+  const p=playerTank;if(!p)return;
+  // --- player input ---
+  if(p.alive&&!paused){
+    let th=0,st=0;
+    if(keys["KeyW"])th=13;if(keys["KeyS"])th=-7; // target speed m/s (~47 / 25 km/h)
+    // left stick: push up = forward, pull down = reverse, tilt = steer (analog)
+    if(tState.drive.y<0)th=13*Math.min(1,-tState.drive.y);
+    else if(tState.drive.y>0)th=-7*Math.min(1,tState.drive.y);
+    st+=(keys["KeyA"]?1:0)-(keys["KeyD"]?1:0)-tState.drive.x;
+    if(keys["Space"]||touchBrake){th=0;p.speed*=Math.pow(0.02,dt);} // brake
+    p.applyThrottle(th,st,dt);
+    engineThrottle=th>0.2?1:th<-0.2?-0.7:0;
+    // turret pad drag (top of screen), with the keyboard slew still available
+    p.turretYaw=clamp(p.turretYaw-tState.yawDelta*0.0030*aimSens+(keys["KeyQ"]?0.45*dt:0)-(keys["KeyE"]?0.45*dt:0),-2.3,2.3);
+    p.elev=clamp(p.elev-tState.elevDelta*0.0020*aimSens+(keys["ArrowUp"]?0.16*dt:0)-(keys["ArrowDown"]?0.16*dt:0),-0.18,0.5);
+    tState.yawDelta=0;tState.elevDelta=0;
+    if(keys["MouseMain"])p.fireMain();
+    if(keys["MouseMG"])p.fireMG(dt);
+  }
+  p.reloadT=Math.max(0,p.reloadT-dt);p.mgCooldown-=dt;
+  for(const t of tanks){
+    t.reloadT=Math.max(0,t.reloadT-dt);t.mgCooldown-=dt;t.hitFlash=Math.max(0,t.hitFlash-2.5*dt);
+    if(!t.isPlayer&&!paused)updateAI(t,dt);
+    if(!t.alive){
+      t.deadT+=dt;
+      t.smokeTimer-=dt;
+      if(t.smokeTimer<=0){
+        t.smokeTimer=rand(0.15,0.4);
+        const sp=t.pos.clone().setY(t.pos.y+1.5);
+        puff(sp,new THREE.Vector3(rand(-.5,.5),rand(2,4),rand(-.5,.5)),Math.random()<.6?0x333:0x555,rand(1,2.5),2.5,rand(2,4),-0.4,0.5);
+        if(t.deadT<8&&Math.random()<.5)puff(sp,new THREE.Vector3(0,3,0),0xff9a4a,rand(.6,1.4),2,0.6,0,0.8);
+      }
+      t.flameT=(t.flameT||0)-dt;
+      if(t.flameT<=0){ // wreck burns continuously
+        t.flameT=rand(0.06,0.14);
+        const fp=t.pos.clone().add(new THREE.Vector3(rand(-1.2,1.2),rand(.5,1.8),rand(-2,2)));
+        puff(fp,new THREE.Vector3(rand(-.5,.5),rand(2,5),rand(-.5,.5)),Math.random()<.5?0xff9a4a:0xffd24a,rand(.8,1.6),1.6,rand(.35,.7),0.8,0.85);
+        if(Math.random()<.3)puff(fp,new THREE.Vector3(0,rand(1,3),0),0x333333,rand(1.2,2),2.4,rand(1.5,3),-0.2,0.5);
+      }
+      if(t.deadT>6&&!t.exploded){t.exploded=true;explode(t.pos.clone().setY(t.pos.y+1),3.4);}
+    }
+    t.updateVisuals(performance.now()/1000);
+    // track dust when driving hard
+    t.dustT=(t.dustT||0)-dt;
+    if(t.alive&&Math.abs(t.speed)>7&&t.dustT<=0&&camDistTo(t.pos)<650){
+      t.dustT=rand(0.08,0.16);
+      const f=t.fwd,side=new THREE.Vector3(-f.z,0,f.x);
+      for(const sgn of[-1,1]){
+        const dp=t.pos.clone().addScaledVector(f,-3).addScaledVector(side,sgn*2);dp.y+=0.3;
+        puff(dp,new THREE.Vector3(-f.x*rand(1,3),rand(.5,1.5),-f.z*rand(1,3)),Math.random()<.5?0x8a7a5e:0xa09070,rand(.7,1.3),2.2,rand(.7,1.4),-0.6,0.28);
+      }
+    }
+  }
+  updateShells(dt);updateParticles(dt);updateImpactMarks(dt);updateDrone(dt);
+  // drone HUD
+  const ds=document.getElementById("droneStatus");
+  if(drone.state==="stowed")ds.textContent=drone.cooldown>0?("RELAUNCH IN "+Math.ceil(drone.cooldown)+"s"):"UAV STOWED — ENDURANCE 10:00";
+  else if(drone.state==="flying"){const m=Math.floor(drone.endurance/60),s=Math.floor(drone.endurance%60);ds.textContent="FEED LIVE — T-"+m+":"+String(s).padStart(2,"0");}
+  else ds.textContent=drone.state;
+  document.getElementById("droneBtn").textContent=drone.state==="stowed"?"STOWED — TAP UAV":"ACTIVE";
+  // --- camera ---
+  const f=p.fwd,up=new THREE.Vector3(0,1,0);
+  if(camMode==="exterior"){
+    p.model.group.visible=true;
+    const want=p.pos.clone().addScaledVector(f,-15).add(up.multiplyScalar(6.5));
+    want.y=Math.max(want.y,groundH(want.x,want.z)+2);
+    camera.position.lerp(want,Math.min(1,dt*4));
+    camera.lookAt(p.pos.clone().addScaledVector(f,4).setY(p.pos.y+2.5));
+  }else{
+    // commander sight: own model hidden, camera rides the stabilized gun axis
+    p.model.group.visible=false;
+    const d=p.barrelDir(),cp=p.turretWorld();
+    cp.addScaledVector(d,-1.6);cp.y+=0.3;
+    camera.position.copy(cp);
+    // light stabilized-sight sway only
+    const sw=Math.sin(performance.now()*0.008)*clamp(Math.abs(p.speed)/26,0,1)*0.12;
+    camera.position.y+=sw;
+    camera.lookAt(cp.clone().addScaledVector(d,80));
+  }
+  if(shake>0){camera.position.x+=rand(-shake,shake)*0.3;camera.position.y+=rand(-shake,shake)*0.3;shake=Math.max(0,shake-dt*2.5);}
+  // sun follows player for shadows
+  sun.position.set(p.pos.x-320,p.pos.y+420,p.pos.z-180);sun.target.position.copy(p.pos);
+  // audio engine
+  if(started)AudioSys.engine(p.speed,engineThrottle);
+  // win/lose
+  if(!gameOver){
+    const enemies=tanks.filter(t=>t.team===1);
+    if(enemies.every(t=>!t.alive))endGame(true);
+    else if(!p.alive)endGame(false);
+  }
+}
+function endGame(win){
+  gameOver=true;
+  releaseHeld();touchEl.classList.remove("on");
+  document.getElementById("endScreen").style.display="flex";
+  const t=document.getElementById("endTitle");
+  t.textContent=win?"VICTORY":"MISSION FAILED";
+  t.style.color=win?"#9eff9e":"#ff6a5a";
+  document.getElementById("endSub").textContent=win?"ENEMY ARMOR ELIMINATED — AREA SECURED":"YOUR TANK WAS DESTROYED";
+}
+
+/* ---------- HUD refresh (10Hz-ish) ---------- */
+let hudT=0;
+function refreshHUD(dt){
+  hudT-=dt;if(hudT>0)return;hudT=0.1;
+  const p=playerTank;if(!p)return;
+  document.getElementById("hpbar").style.width=Math.max(0,p.hp)+"%";
+  document.getElementById("hpbar").style.background=p.hp>50?"linear-gradient(90deg,#2e7d32,#7cfc66)":"linear-gradient(90deg,#8a3a1e,#ffd24a)";
+  document.getElementById("apAmmo").textContent="AP ×"+p.ammo.ap;
+  document.getElementById("heAmmo").textContent="HE ×"+p.ammo.he;
+  const rl=clamp(1-p.reloadT/(p.type==="abrams"?5.2:4.6),0,1);
+  document.getElementById("reloadBar").style.width=(rl*100)+"%";
+  const rname=p.round==="ap"?"APFSDS-DT":"HE-THERMOBARIC";
+  document.getElementById("roundSel").textContent=rname;document.getElementById("roundSel2").textContent=rname;
+  document.getElementById("speedo").textContent=Math.round(Math.abs(p.speed)*3.6);
+  // touch button state: reload ring on the fire button, selected round, camera, UAV
+  document.getElementById("btnFire").classList.toggle("rl",p.reloadT>0);
+  document.getElementById("fireRing").style.background=p.reloadT>0
+    ? "conic-gradient(rgba(255,160,90,.30) "+(rl*360).toFixed(0)+"deg, rgba(0,0,0,0) 0deg)" : "none";
+  document.getElementById("fireAmmo").textContent=p.round==="ap"?("AP "+p.ammo.ap):("HE "+p.ammo.he);
+  const rbtn=document.getElementById("btnRound");
+  rbtn.textContent=p.round==="ap"?"AP \u25b8 HE":"HE \u25b8 AP";
+  rbtn.classList.toggle("hot",p.round==="he");
+  document.getElementById("btnCam").textContent=camMode==="interior"?"CAM SIGHT":"CAM EXT";
+  document.getElementById("btnUav").classList.toggle("hot",drone.state==="flying");
+  // commander sight readouts (interior view)
+  if(camMode==="interior"&&p.alive){
+    const az=((p.barrelYaw*180/Math.PI)%360+360)%360;
+    const el=p.elev*180/Math.PI;
+    // march the gun ray to terrain for a range estimate
+    let rng=2000;const d=p.barrelDir(),o=p.muzzleWorld();
+    for(let r=8;r<2000;r+=8){const qx=o.x+d.x*r,qy=o.y+d.y*r,qz=o.z+d.z*r;if(qy<=groundH(qx,qz)+0.5){rng=r;break;}}
+    document.getElementById("stTop").textContent=`AZ ${String(Math.round(az)).padStart(3,"0")}° · EL ${el>=0?"+":""}${el.toFixed(1)}°`;
+    document.getElementById("stBot").textContent=`RNG ${rng<2000?Math.round(rng/5)*5+" m":"2 km+"} · SPD ${Math.round(Math.abs(p.speed)*3.6)} km/h`;
+  }
+  // vignette decay
+  const v=document.getElementById("vignette");
+  v.style.opacity=Math.max(0,parseFloat(v.style.opacity||0)-0.5);
+  // messages
+  for(let i=msgs.length-1;i>=0;i--){msgs[i].t-=0.1;if(msgs[i].t<=0)msgs.splice(i,1);}
+  document.getElementById("msgs").innerHTML=msgs.map(m=>`<div style="color:${m.color}">${m.text}</div>`).join("");
+}
+
+function frame(now){
+  requestAnimationFrame(frame);
+  let dt=Math.min(0.05,(now-lastT)/1000);lastT=now;
+  if(!started||paused)dt*=0.2;
+  timeU.value=now/1000;
+  sky.position.copy(camera.position); // keep dome centered on viewer
+  update(dt);refreshHUD(Math.min(dt,0.2));
+  hudTickT-=dt;
+  if(hudTickT<=0){hudTickT=Q.hudInterval;drawCompass();drawTacMap(now/1000);}
+  if(pipe){pipe.update(now/1000);pipe.composer.render();}
+  else renderer.render(scene,camera);
+}
+requestAnimationFrame(frame);
+
+function onViewportChange(){
+  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+  if(pipe)pipe.setSize(innerWidth,innerHeight);
+  layoutTouch();resetStick();tPointers.clear();
+}
+addEventListener("resize",onViewportChange);
+addEventListener("orientationchange",()=>setTimeout(onViewportChange,120));
+</script>
+</body>
+</html>

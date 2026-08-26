@@ -1,0 +1,86 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - main
+      - claude/android-tank-game-touch-vhmbpl
+    paths:
+      - "android/**"
+      - "shared/**"
+      - "city-storm/**"
+      - "tools/**"
+      - ".github/workflows/android.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Two runs racing to replace the android-latest release can leave it without an
+# asset, so a newer push cancels the one already in flight.
+concurrency:
+  group: android-apk
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Shared kits are in sync
+        working-directory: .
+        # The kits are inlined into the single-file games; a stale copy is a
+        # silent divergence that only shows up as a graphics bug on the device.
+        run: node tools/sync-shared.mjs --check
+
+      - name: City Storm headless smoke test
+        working-directory: city-storm
+        # Boots the game module against Three.js mocks and runs 900 frames, so
+        # a crash in the simulation is caught before the APK is built.
+        run: node _runtest.mjs
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install SDK packages
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Build debug APK
+        run: ./gradlew --no-daemon --stacktrace assembleDebug
+
+      - name: Name the APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk combat-arcade.apk
+
+      - name: Upload as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: combat-arcade-apk
+          path: android/combat-arcade.apk
+          if-no-files-found: error
+
+      # A rolling pre-release gives the phone a stable, tap-to-download URL.
+      - name: Publish rolling release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete android-latest --cleanup-tag --yes || true
+          gh release create android-latest combat-arcade.apk \
+            --title "Combat Arcade — latest Android build" \
+            --prerelease \
+            --notes "Debug-signed APK, built from \`${GITHUB_SHA::7}\`.
+
+          Three games in one app: Steel Thunder (tanks), Falcon Strike (jets), City Storm (FPS).
+
+          Install: download on the phone, allow *Install unknown apps* for your browser, open the file.
+          Landscape only. No network permission — everything runs offline."

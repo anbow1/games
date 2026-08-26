@@ -1,0 +1,86 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Photoreal kit — material bench</title>
+<style>html,body{margin:0;overflow:hidden;background:#000}canvas{display:block}</style></head><body>
+<!-- Regression bench for shared/photoreal.js: a roughness sweep in metal, plus
+     cloth, skin and clearcoat reference balls under the kit's IBL and post chain.
+     Serve the repo over HTTP and open /shared/bench.html. Query flags: ?ao=0,
+     ?bloom=0, ?smaa=0 isolate a pass. -->
+<canvas id="gl"></canvas>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+window.THREE = THREE;                         // the kit reads THREE from scope
+import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
+import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
+import {ShaderPass} from 'three/addons/postprocessing/ShaderPass.js';
+import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
+import {SMAAPass} from 'three/addons/postprocessing/SMAAPass.js';
+const PR = await import('./photoreal.js');
+
+const canvas=document.getElementById('gl');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:false});
+renderer.setPixelRatio(1); renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,0.1,2000);
+camera.position.set(0,3.2,11); camera.lookAt(0,1.2,0);
+
+const skyMat=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:false,
+ uniforms:{uSun:{value:new THREE.Vector3(-0.5,0.6,-0.3).normalize()}},
+ vertexShader:`varying vec3 vW;void main(){vW=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(vW,1.);}`,
+ fragmentShader:`uniform vec3 uSun;varying vec3 vW;
+  void main(){vec3 d=normalize(vW);float h=max(d.y,0.);
+   vec3 col=mix(vec3(.55,.62,.68),vec3(.16,.34,.66),1.-exp(-h*3.));
+   float s=max(dot(d,uSun),0.);
+   col+=vec3(2.6,2.2,1.7)*pow(s,900.)*6.+vec3(1.,.85,.6)*pow(s,32.)*.35;
+   gl_FragColor=vec4(col,1.);}`});
+const sky=new THREE.Mesh(new THREE.SphereGeometry(900,32,20),skyMat);
+sky.userData.skipAO=true;            // keep the dome out of the AO depth prepass
+scene.add(sky);
+
+const env=PR.skyEnvironment(renderer,{skyMaterial:skyMat,groundColor:0x4a4235});
+scene.environment=env;
+
+const sun=new THREE.DirectionalLight(0xfff0d8,3.0);
+sun.position.set(-40,50,-25); PR.tuneShadows(sun,{size:2048,extent:14,far:200}); scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xbcd4ff,0x4a4235,0.25));
+
+// ground
+const gm=PR.roughSurface({size:512,color:'#4b4034',grit:.7,crack:.4,seed:21,repeat:8});
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(80,80),
+  new THREE.MeshStandardMaterial({...gm,roughness:1,metalness:0,envMapIntensity:1}));
+ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+
+// metal spheres across a roughness sweep
+const mp=PR.metalPanels({size:512,color:'#6d7261',panel:4,wear:.7,seed:4});
+for(let i=0;i<5;i++){
+  const m=new THREE.MeshStandardMaterial({...mp,metalness:.9,roughness:.12+i*.2,envMapIntensity:1});
+  const s=new THREE.Mesh(new THREE.SphereGeometry(1,48,32),m);
+  s.position.set(-5+i*2.5,1.15,0); s.castShadow=true; scene.add(s);
+}
+// fabric + skin
+const fb=PR.fabric({size:256,color:'#4a5038',seed:8});
+const box=new THREE.Mesh(new THREE.BoxGeometry(1.6,1.6,1.6),
+  new THREE.MeshStandardMaterial({...fb,roughness:1,envMapIntensity:1}));
+box.position.set(-3.4,0.9,3.2); box.castShadow=true; scene.add(box);
+const sk=PR.skin({size:256});
+const head=new THREE.Mesh(new THREE.SphereGeometry(0.9,48,32),
+  new THREE.MeshPhysicalMaterial({...sk,roughness:.55,clearcoat:.25,clearcoatRoughness:.5,envMapIntensity:1}));
+head.position.set(0,0.95,3.4); head.castShadow=true; scene.add(head);
+// clearcoat paint reference ball
+const paint=new THREE.Mesh(new THREE.SphereGeometry(0.9,48,32),
+  new THREE.MeshPhysicalMaterial({color:0x2d4a2b,metalness:.1,roughness:.35,clearcoat:1,clearcoatRoughness:.08,envMapIntensity:1}));
+paint.position.set(3.4,0.95,3.4); paint.castShadow=true; scene.add(paint);
+
+const Qp=new URLSearchParams(location.search);
+const pipe=PR.buildPipeline(renderer,scene,camera,
+  {EffectComposer,RenderPass,ShaderPass,UnrealBloomPass,SMAAPass},
+  {exposure:1.0,bloomThreshold:1.0,bloomStrength:.35,ao:Qp.get('ao')!=='0',bloom:Qp.get('bloom')!=='0',smaa:Qp.get('smaa')!=='0'});
+
+let t=0;
+function frame(){ requestAnimationFrame(frame); t+=0.016; pipe.update(t);
+  pipe.composer.render(); }
+frame();
+window.__ready = true;
+</script></body></html>

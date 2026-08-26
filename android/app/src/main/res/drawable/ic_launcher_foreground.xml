@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 108dp adaptive-icon foreground; the safe zone is the middle 72dp. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- reticle ring, broken at the cardinals -->
+    <path android:strokeColor="#7FFFD4" android:strokeWidth="4.6" android:fillColor="#00000000"
+        android:pathData="M54,17 A37,37 0 0 1 91,54 M91,54 A37,37 0 0 1 54,91 M54,91 A37,37 0 0 1 17,54 M17,54 A37,37 0 0 1 54,17"
+        android:strokeLineCap="butt" />
+    <!-- cross hairs, broken at the centre -->
+    <path android:fillColor="#7FFFD4" android:pathData="M51.7,22 h4.6 v20 h-4.6 z" />
+    <path android:fillColor="#7FFFD4" android:pathData="M51.7,66 h4.6 v20 h-4.6 z" />
+    <path android:fillColor="#7FFFD4" android:pathData="M22,51.7 h20 v4.6 h-20 z" />
+    <path android:fillColor="#7FFFD4" android:pathData="M66,51.7 h20 v4.6 h-20 z" />
+    <!-- centre pip -->
+    <path android:fillColor="#FFD24A" android:pathData="M54,50 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
+</vector>
